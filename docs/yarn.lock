@@ -3365,10 +3365,10 @@
   resolved "https://registry.npmjs.org/@storybook/client-logger/-/client-logger-8.6.15.tgz"
   integrity sha512-/YQ3f0T3hWKVxU12hSZT5HoJmKsynvBTuD4vZ0X/L55Wh352x9c8r18l6VrAwf7Vqd7nvkcL/LBb1e16v/2ZFA==
 
-"@storybook/components@^8.6.15":
-  version "8.6.15"
-  resolved "https://registry.npmjs.org/@storybook/components/-/components-8.6.15.tgz"
-  integrity sha512-+9GVKXPEW8Kl9zvNSTm9+VrJtx/puMZiO7gxCML63nK4aTWJXHQr4t9YUoGammSBM3AV1JglsKm6dBgJEeCoiA==
+"@storybook/components@^8.6.16":
+  version "8.6.16"
+  resolved "https://registry.yarnpkg.com/@storybook/components/-/components-8.6.16.tgz#b08b9df6de61eead3570a42be894665555e9f95c"
+  integrity sha512-ceQiXIdx0jOOqPttn+ooaAvzB0QsejSIKjgn5zc6uVzZo7SziuZ4ym6fqXsrAh2ECg+d5c6HYQkaz30vSQ8ZEg==
 
 "@storybook/core-events@^8.6.15":
   version "8.6.15"
