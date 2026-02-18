@@ -3355,10 +3355,10 @@
     "@storybook/icons" "^1.2.12"
     ts-dedent "^2.0.0"
 
-"@storybook/channels@^8.6.15":
-  version "8.6.15"
-  resolved "https://registry.npmjs.org/@storybook/channels/-/channels-8.6.15.tgz"
-  integrity sha512-GbZmv4/kf14HBIetL/ZEV+D4XnH5gEiNQmSFN6Gef1rVWdOfnM6SRgUCnj2xSzkPhRb+hgxJ/tC2+WQI7+3kjA==
+"@storybook/channels@^8.6.16":
+  version "8.6.16"
+  resolved "https://registry.yarnpkg.com/@storybook/channels/-/channels-8.6.16.tgz#7fbf004deaa4ed3fa72d5d8d1a927ec2d08353f0"
+  integrity sha512-FCWNU4pro+WMLjor2xKZyebEfpVje/TgHMpYQGokg0i1ieE7yPzKZbqPwiKIr+e4Tw2WjuDrQpEKxKgDgKRFcA==
 
 "@storybook/client-logger@^8.6.15":
   version "8.6.15"
