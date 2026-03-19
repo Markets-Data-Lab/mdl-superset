@@ -10,7 +10,7 @@ Architecture: **CloudFront → ALB → ECS Fargate (Superset)**, with Cognito OI
 - An existing Cognito User Pool with:
   - An app client (with client secret enabled)
   - A domain configured
-  - Groups created: `superset-admins`, `superset-alpha`, `superset-analysts`
+  - Groups created: `am-infra-emi-admin`, `am-infra-emi`, `am-non-emi`
   - Callback URL set to `https://<your-cloudfront-domain>/oauth-authorized/cognito`
 - An existing CloudFront distribution
 - Snowflake account with connection details
