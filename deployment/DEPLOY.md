@@ -120,13 +120,45 @@ Superset reads from the tables and views materialized by dbt and dbt Elementary 
 
 ## Updating Superset
 
-```bash
-# Rebuild and push image
-cd deployment/cdk
-npx cdk deploy SupersetEcs
+Pushes to `main` automatically deploy via GitHub Actions (`.github/workflows/deploy-ecs.yml`).
 
-# Run migrations (if needed)
-aws ecs run-task --cluster ... --task-definition <InitTaskDefArn> ...
+The workflow:
+1. Builds a new Docker image with your changes
+2. Deploys the updated ECS services via CDK
+3. Runs database migrations automatically
+
+### CI/CD Setup (one-time)
+
+1. **Create an IAM role for GitHub Actions** with OIDC trust (no long-lived keys):
+   - Trust policy: allow `token.actions.githubusercontent.com` for your repo
+   - Permissions: CDK deploy (CloudFormation, ECS, ECR, EC2, IAM, Secrets Manager, Logs)
+
+2. **Add these GitHub secrets** (Settings → Secrets and variables → Actions):
+
+   | Secret | Value |
+   |--------|-------|
+   | `AWS_DEPLOY_ROLE_ARN` | `arn:aws:iam::<account>:role/<your-deploy-role>` |
+   | `COGNITO_DOMAIN` | Your Cognito user pool domain |
+   | `COGNITO_CLIENT_ID` | Your Cognito app client ID |
+   | `COGNITO_USER_POOL_ID` | Your Cognito user pool ID |
+   | `SUPERSET_PUBLIC_URL` | `https://<your-cloudfront-domain>` |
+
+3. **Add these GitHub variables** (Settings → Secrets and variables → Actions → Variables):
+
+   | Variable | Value |
+   |----------|-------|
+   | `AWS_REGION` | Your AWS region (e.g. `us-east-1`) |
+   | `CLOUDFRONT_PREFIX_LIST_ID` | CloudFront prefix list ID (e.g. `pl-3b927c52` for us-east-1) |
+
+### Manual deploy
+
+```bash
+cd deployment/cdk
+npx cdk deploy SupersetEcs \
+  -c cognitoDomain=<domain> \
+  -c cognitoClientId=<id> \
+  -c cognitoUserPoolId=<pool-id> \
+  -c supersetPublicUrl=https://<cloudfront-domain>
 ```
 
 ## Troubleshooting
