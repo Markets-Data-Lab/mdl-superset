@@ -1,0 +1,54 @@
+#
+# Production Dockerfile for Superset on AWS ECS Fargate.
+# Extends the lean build target with Snowflake driver and production config.
+#
+# Build:
+#   docker build -f deployment/Dockerfile.prod -t superset-prod .
+#
+# Required build args (optional overrides):
+#   --build-arg PY_VER=3.11.14-slim-trixie
+#   --build-arg BUILD_TRANSLATIONS=true
+#
+
+######################################################################
+# Start from the lean (production) target in the main Dockerfile
+######################################################################
+FROM superset-lean AS production
+
+# Switch to root for package installation
+USER root
+
+# Install Snowflake SQLAlchemy driver and Authlib for Cognito OIDC
+RUN --mount=type=cache,target=/app/superset_home/.cache/uv \
+    uv pip install \
+        "snowflake-sqlalchemy>=1.2.4,<2" \
+        "authlib>=1.3,<2"
+
+# Install PostgreSQL driver (for RDS metadata DB)
+RUN --mount=type=cache,target=/app/superset_home/.cache/uv \
+    uv pip install "psycopg2-binary>=2.9,<3"
+
+# Copy production configuration
+COPY deployment/docker/superset_config.py /app/pythonpath/superset_config.py
+COPY deployment/docker/custom_sso_security_manager.py /app/pythonpath/custom_sso_security_manager.py
+COPY deployment/docker/__init__.py /app/pythonpath/__init__.py
+
+# Production gunicorn defaults (can be overridden via env vars)
+ENV SERVER_WORKER_AMOUNT=4 \
+    SERVER_WORKER_CLASS=gthread \
+    SERVER_THREADS_AMOUNT=20 \
+    GUNICORN_TIMEOUT=120 \
+    GUNICORN_KEEPALIVE=5 \
+    WORKER_MAX_REQUESTS=1000 \
+    WORKER_MAX_REQUESTS_JITTER=50 \
+    SUPERSET_ENV=production \
+    FLASK_DEBUG=false \
+    SUPERSET_LOG_LEVEL=INFO
+
+USER superset
+
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD curl -f "http://localhost:${SUPERSET_PORT:-8088}/health" || exit 1
+
+CMD ["/app/docker/entrypoints/run-server.sh"]
+EXPOSE 8088
