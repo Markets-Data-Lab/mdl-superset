@@ -92,7 +92,9 @@ Monitor the init task in CloudWatch Logs under `/ecs/superset/init`.
 4. Add the Cognito callback URL to your Cognito app client:
    - `https://<cloudfront-domain>/oauth-authorized/cognito`
 
-## Step 5: Connect Snowflake
+## Step 5: Connect Snowflake (dbt & dbt Elementary)
+
+Superset reads from the tables and views materialized by dbt and dbt Elementary in Snowflake.
 
 1. Log into Superset as admin
 2. Go to **Data → Databases → + Database**
@@ -102,6 +104,19 @@ Monitor the init task in CloudWatch Logs under `/ecs/superset/init`.
    snowflake://{user}:{password}@{account}.{region}/{database}?role={role}&warehouse={warehouse}
    ```
    Or use key-pair authentication via the advanced settings.
+
+### Recommended Snowflake databases to connect
+
+| Database | Purpose |
+|----------|---------|
+| dbt production database | Tables/views materialized by dbt (marts, staging, intermediate models) |
+| dbt Elementary database | dbt Elementary observability tables (test results, model run times, data quality) |
+
+**Tips:**
+- Use a **read-only Snowflake role** for the Superset service account
+- Point Superset at the **production** dbt target (not dev/CI schemas)
+- dbt Elementary tables are typically in an `elementary` schema — add this as a separate dataset source
+- Use Superset's **SQL Lab** to explore available schemas before building dashboards
 
 ## Updating Superset
 
@@ -144,6 +159,8 @@ aws ecs execute-command \
 
 ## Security Notes
 
+- **Not publicly accessible** — ALB security group restricts inbound to CloudFront managed prefix list only (no direct ALB access)
+- **Authentication required** — Cognito OIDC enforces login; only users in mapped groups (`am-infra-emi-admin`, `am-infra-emi`, `am-non-emi`) can access Superset
 - All secrets are stored in AWS Secrets Manager (never in env files or code)
 - RDS and Redis are in isolated subnets with no public access
 - ECS tasks run in private subnets with NAT gateway for outbound

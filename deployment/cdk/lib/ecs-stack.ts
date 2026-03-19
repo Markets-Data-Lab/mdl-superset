@@ -209,16 +209,31 @@ export class SupersetEcsStack extends cdk.Stack {
     });
 
     // ---------------------------------------------------------------
-    // Application Load Balancer
+    // Application Load Balancer (CloudFront-only access)
     // ---------------------------------------------------------------
     const alb = new elbv2.ApplicationLoadBalancer(this, "SupersetAlb", {
       vpc: props.vpc,
-      internetFacing: true,
+      internetFacing: true, // Must be internet-facing for CloudFront origin
     });
+
+    // Restrict ALB to CloudFront traffic only using the AWS managed prefix list.
+    // This prevents direct access to the ALB, bypassing CloudFront.
+    const albSg = alb.connections.securityGroups[0];
+    // Remove the default "allow all" ingress rule by adding only CloudFront
+    albSg.addIngressRule(
+      ec2.Peer.prefixList(
+        // AWS-managed prefix list for CloudFront origin-facing IPs
+        // Look up the ID: aws ec2 describe-managed-prefix-lists --filters Name=prefix-list-name,Values=com.amazonaws.global.cloudfront.origin-facing
+        this.node.tryGetContext("cloudfrontPrefixListId") ?? "pl-3b927c52" // us-east-1 default
+      ),
+      ec2.Port.tcp(80),
+      "Allow inbound from CloudFront only"
+    );
 
     const listener = alb.addListener("HttpListener", {
       port: 80,
       protocol: elbv2.ApplicationProtocol.HTTP,
+      open: false, // Do not auto-add 0.0.0.0/0 ingress
     });
 
     listener.addTargets("WebTarget", {
