@@ -5,7 +5,8 @@ Environment variables required (set via ECS task definition / Secrets Manager):
   - SECRET_KEY: Cryptographically secure random string
   - DATABASE_URL: PostgreSQL RDS connection string
   - REDIS_URL: ElastiCache Redis connection string
-  - COGNITO_DOMAIN: Cognito user pool domain (e.g. myapp.auth.us-east-1.amazoncognito.com)
+  - COGNITO_DOMAIN: Cognito user pool domain
+    (e.g. myapp.auth.us-east-1.amazoncognito.com)
   - COGNITO_CLIENT_ID: Cognito app client ID
   - COGNITO_CLIENT_SECRET: Cognito app client secret
   - COGNITO_REGION: AWS region (e.g. us-east-1)
@@ -208,7 +209,8 @@ WTF_CSRF_ENABLED = True
 WTF_CSRF_SSL_STRICT = False
 TALISMAN_ENABLED = True
 TALISMAN_CONFIG = {
-    "content_security_policy": None,  # Tune once deployed; Superset needs inline scripts
+    # Tune once deployed; Superset needs inline scripts
+    "content_security_policy": None,
     "force_https": False,  # TLS is terminated at CloudFront/ALB
 }
 
