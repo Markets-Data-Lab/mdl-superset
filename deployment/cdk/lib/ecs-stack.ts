@@ -115,8 +115,8 @@ export class SupersetEcsStack extends cdk.Stack {
     // Allow ECS → RDS (standalone ingress to avoid cross-stack cycle)
     new ec2.CfnSecurityGroupIngress(this, "EcsToRds", {
       ipProtocol: "tcp",
-      fromPort: parseInt(props.rdsPort),
-      toPort: parseInt(props.rdsPort),
+      fromPort: cdk.Token.asNumber(props.rdsPort),
+      toPort: cdk.Token.asNumber(props.rdsPort),
       groupId: props.dbSecurityGroup.securityGroupId,
       sourceSecurityGroupId: ecsSg.securityGroupId,
       description: "ECS to RDS",
@@ -125,8 +125,8 @@ export class SupersetEcsStack extends cdk.Stack {
     // Allow ECS → Redis (standalone ingress to avoid cross-stack cycle)
     new ec2.CfnSecurityGroupIngress(this, "EcsToRedis", {
       ipProtocol: "tcp",
-      fromPort: parseInt(props.redisPort),
-      toPort: parseInt(props.redisPort),
+      fromPort: cdk.Token.asNumber(props.redisPort),
+      toPort: cdk.Token.asNumber(props.redisPort),
       groupId: props.redisSecurityGroup.securityGroupId,
       sourceSecurityGroupId: ecsSg.securityGroupId,
       description: "ECS to Redis",
