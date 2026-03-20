@@ -188,12 +188,9 @@ const StyledImage = styled(Image)`
 `;
 
 const StyledSupersetLogo = styled.img`
-  ${({ theme }) => css`
-    height: 48px;
-    margin: 0 ${theme.sizeUnit * 2}px;
-    align-self: center;
-    object-fit: contain;
-  `}
+  height: 48px;
+  align-self: center;
+  object-fit: contain;
 `;
 
 const StyledDivider = styled.div`
@@ -202,7 +199,6 @@ const StyledDivider = styled.div`
     height: 40px;
     background-color: ${theme.colorBorderSecondary};
     align-self: center;
-    margin: 0 ${theme.sizeUnit * 2}px;
   `}
 `;
 
