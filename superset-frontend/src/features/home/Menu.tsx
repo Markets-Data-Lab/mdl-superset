@@ -189,10 +189,20 @@ const StyledImage = styled(Image)`
 
 const StyledSupersetLogo = styled.img`
   ${({ theme }) => css`
-    height: 20px;
+    height: 48px;
     margin: 0 ${theme.sizeUnit * 2}px;
     align-self: center;
     object-fit: contain;
+  `}
+`;
+
+const StyledDivider = styled.div`
+  ${({ theme }) => css`
+    width: 1px;
+    height: 40px;
+    background-color: ${theme.colorBorderSecondary};
+    align-self: center;
+    margin: 0 ${theme.sizeUnit * 2}px;
   `}
 `;
 
@@ -366,6 +376,7 @@ export function Menu({
               <span>{brand.text}</span>
             </StyledBrandText>
           )}
+          <StyledDivider />
           <StyledSupersetLogo
             src={supersetLogo}
             alt="Powered by Apache Superset"
