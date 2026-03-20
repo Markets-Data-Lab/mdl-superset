@@ -46,3 +46,5 @@ superset/static/assets/
 superset-websocket/dist/
 venv
 .venv
+deployment/cdk/cdk.out/
+deployment/cdk/node_modules/

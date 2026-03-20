@@ -34,7 +34,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-2' }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -55,9 +55,9 @@ jobs:
             -c cognitoDomain=${{ secrets.COGNITO_DOMAIN }} \
             -c cognitoClientId=${{ secrets.COGNITO_CLIENT_ID }} \
             -c cognitoUserPoolId=${{ secrets.COGNITO_USER_POOL_ID }} \
-            -c cognitoRegion=${{ vars.AWS_REGION || 'us-east-1' }} \
+            -c cognitoRegion=${{ vars.AWS_REGION || 'us-east-2' }} \
             -c supersetPublicUrl=${{ secrets.SUPERSET_PUBLIC_URL }} \
-            -c cloudfrontPrefixListId=${{ vars.CLOUDFRONT_PREFIX_LIST_ID || 'pl-3b927c52' }}
+            -c cloudfrontPrefixListId=${{ vars.CLOUDFRONT_PREFIX_LIST_ID || 'pl-b6a144df' }}
 
       - name: Run database migrations
         run: |
