@@ -52,12 +52,31 @@ SUPERSET_LOAD_EXAMPLES = False
 ENABLE_PROXY_FIX = True  # Required behind ALB/CloudFront
 PROXY_FIX_CONFIG = {
     "x_for": 1,
-    "x_proto": 0,  # Disabled: ALB overwrites proto to http since CloudFront→ALB is HTTP
+    "x_proto": 0,  # Disabled: ALB sets proto to http since CloudFront→ALB is HTTP
     "x_host": 1,
     "x_port": 0,
     "x_prefix": 0,
 }
-PREFERRED_URL_SCHEME = "https"  # Force HTTPS for url_for() since CloudFront terminates TLS
+PREFERRED_URL_SCHEME = "https"
+
+
+# Force HTTPS at WSGI level so Flask's url_for() generates https:// redirect URIs.
+# CloudFront terminates TLS but ALB→ECS is plain HTTP, so the request scheme is "http".
+# PREFERRED_URL_SCHEME alone doesn't override during active requests; we need to set
+# wsgi.url_scheme in the environ before Flask creates the request context.
+def FLASK_APP_MUTATOR(app):  # noqa: N802
+    """Wrap WSGI app to force HTTPS scheme for all generated URLs."""
+    _inner_wsgi = app.wsgi_app
+
+    class _ForceHTTPS:
+        def __init__(self, wsgi):
+            self.wsgi = wsgi
+
+        def __call__(self, environ, start_response):
+            environ["wsgi.url_scheme"] = "https"
+            return self.wsgi(environ, start_response)
+
+    app.wsgi_app = _ForceHTTPS(_inner_wsgi)
 
 # ---------------------------------------------------------------------------
 # Redis / Caching (ElastiCache)
