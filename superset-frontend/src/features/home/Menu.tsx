@@ -20,6 +20,8 @@ import { useState, useEffect } from 'react';
 import { styled, css, useTheme } from '@apache-superset/core/ui';
 import { ensureStaticPrefix } from 'src/utils/assetUrl';
 import { ensureAppRoot } from 'src/utils/pathUtils';
+import supersetLogoLight from 'src/assets/branding/superset-logo-horiz.png';
+import supersetLogoDark from 'src/assets/branding/superset-logo-horiz-apache-dark.png';
 import { getUrlParam } from 'src/utils/urlUtils';
 import { MainNav, MenuItem } from '@superset-ui/core/components/Menu';
 import { Tooltip, Grid, Row, Col, Image } from '@superset-ui/core/components';
@@ -28,6 +30,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { Icons } from '@superset-ui/core/components/Icons';
 import { Typography } from '@superset-ui/core/components/Typography';
 import { useUiConfig } from 'src/components/UiConfigContext';
+import { useThemeContext } from 'src/theme/ThemeProvider';
 import { URL_PARAMS } from 'src/constants';
 import {
   MenuObjectChildProps,
@@ -46,6 +49,7 @@ const StyledHeader = styled.header`
   ${({ theme }) => css`
     background-color: ${theme.colorBgContainer};
     border-bottom: 1px solid ${theme.colorBorderSecondary};
+    height: 64px;
     padding: 0 ${theme.sizeUnit * 4}px;
     z-index: 10;
 
@@ -183,6 +187,15 @@ const StyledImage = styled(Image)`
   object-fit: contain;
 `;
 
+const StyledSupersetLogo = styled.img`
+  ${({ theme }) => css`
+    height: 20px;
+    margin: 0 ${theme.sizeUnit * 2}px;
+    align-self: center;
+    object-fit: contain;
+  `}
+`;
+
 const { useBreakpoint } = Grid;
 
 export function Menu({
@@ -198,6 +211,12 @@ export function Menu({
   const screens = useBreakpoint();
   const uiConfig = useUiConfig();
   const theme = useTheme();
+  const { themeMode } = useThemeContext();
+  const isDark =
+    themeMode === 'dark' ||
+    (themeMode === 'system' &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const supersetLogo = isDark ? supersetLogoDark : supersetLogoLight;
 
   enum Paths {
     Explore = '/explore',
@@ -347,6 +366,10 @@ export function Menu({
               <span>{brand.text}</span>
             </StyledBrandText>
           )}
+          <StyledSupersetLogo
+            src={supersetLogo}
+            alt="Powered by Apache Superset"
+          />
           <StyledMainNav
             mode="horizontal"
             data-test="navbar-top"
