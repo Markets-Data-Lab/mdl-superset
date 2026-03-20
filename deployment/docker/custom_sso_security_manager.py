@@ -7,6 +7,8 @@ Handles:
 - Auto-provisioning users on first login
 """
 
+from __future__ import annotations
+
 import logging
 
 from superset.security import SupersetSecurityManager
@@ -15,7 +17,9 @@ logger = logging.getLogger(__name__)
 
 
 class CognitoSecurityManager(SupersetSecurityManager):
-    def oauth_user_info(self, provider: str, response: dict = None) -> dict:
+    def oauth_user_info(
+        self, provider: str, response: dict[str, str] | None = None
+    ) -> dict[str, str]:
         """Extract user info from the Cognito OIDC token.
 
         Args:
