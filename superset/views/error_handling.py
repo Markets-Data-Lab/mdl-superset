@@ -149,7 +149,7 @@ def set_app_error_handlers(app: Flask) -> None:  # noqa: C901
         """Redirect to login if the CSRF token is expired"""
         logger.warning("Refresh CSRF token error", exc_info=True)
 
-        if request.is_json:
+        if request.is_json or request.path.startswith("/api/"):
             return show_http_exception(ex)
 
         return redirect_to_login()
