@@ -50,7 +50,7 @@ const StyledHeader = styled.header`
     background-color: ${theme.colorBgContainer};
     border-bottom: 1px solid ${theme.colorBorderSecondary};
     height: 64px;
-    padding: 0 ${theme.sizeUnit * 4}px 0 64px;
+    padding: 0 ${theme.sizeUnit * 4}px;
     z-index: 10;
 
     &:nth-last-of-type(2) nav {
