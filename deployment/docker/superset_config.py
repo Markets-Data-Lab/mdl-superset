@@ -52,11 +52,12 @@ SUPERSET_LOAD_EXAMPLES = False
 ENABLE_PROXY_FIX = True  # Required behind ALB/CloudFront
 PROXY_FIX_CONFIG = {
     "x_for": 1,
-    "x_proto": 1,  # Trust X-Forwarded-Proto from ALB/CloudFront
+    "x_proto": 0,  # Disabled: ALB overwrites proto to http since CloudFront→ALB is HTTP
     "x_host": 1,
     "x_port": 0,
     "x_prefix": 0,
 }
+PREFERRED_URL_SCHEME = "https"  # Force HTTPS for url_for() since CloudFront terminates TLS
 
 # ---------------------------------------------------------------------------
 # Redis / Caching (ElastiCache)
