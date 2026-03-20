@@ -13,14 +13,13 @@ Environment variables required (set via ECS task definition / Secrets Manager):
   - SUPERSET_PUBLIC_URL: Public URL of your Superset instance (via CloudFront)
 """
 
-import os
 import logging
+import os
 from datetime import timedelta
 
 from celery.schedules import crontab
-from flask_appbuilder.security.manager import AUTH_OAUTH
-
 from custom_sso_security_manager import CognitoSecurityManager
+from flask_appbuilder.security.manager import AUTH_OAUTH
 
 logger = logging.getLogger()
 
@@ -28,7 +27,9 @@ logger = logging.getLogger()
 # Core settings
 # ---------------------------------------------------------------------------
 SECRET_KEY = os.environ["SECRET_KEY"]
-SUPERSET_PUBLIC_URL = os.environ.get("SUPERSET_PUBLIC_URL", "https://superset.example.com")
+SUPERSET_PUBLIC_URL = os.environ.get(
+    "SUPERSET_PUBLIC_URL", "https://superset.example.com"
+)
 
 # Metadata database (RDS PostgreSQL)
 # Supports either a full DATABASE_URL or individual components from RDS Secrets Manager
@@ -78,6 +79,7 @@ def FLASK_APP_MUTATOR(app):  # noqa: N802
 
     app.wsgi_app = _ForceHTTPS(_inner_wsgi)
 
+
 # ---------------------------------------------------------------------------
 # Redis / Caching (ElastiCache)
 # ---------------------------------------------------------------------------
@@ -104,6 +106,7 @@ EXPLORE_FORM_DATA_CACHE_CONFIG = {
     "CACHE_KEY_PREFIX": "superset_explore_",
     "CACHE_DEFAULT_TIMEOUT": 600,
 }
+
 
 # ---------------------------------------------------------------------------
 # Celery (async queries, alerts, reports)
@@ -197,6 +200,12 @@ SESSION_COOKIE_SAMESITE = "Lax"
 PERMANENT_SESSION_LIFETIME = timedelta(hours=8)
 
 WTF_CSRF_ENABLED = True
+# Disable SSL strict Referer checking for CSRF validation. Behind
+# CloudFront → ALB the Referer header contains the CloudFront domain
+# while request.host resolves to the ALB hostname (ALB does not set
+# X-Forwarded-Host), causing every mutating API request to fail CSRF
+# validation with a Referer mismatch.
+WTF_CSRF_SSL_STRICT = False
 TALISMAN_ENABLED = True
 TALISMAN_CONFIG = {
     "content_security_policy": None,  # Tune once deployed; Superset needs inline scripts
