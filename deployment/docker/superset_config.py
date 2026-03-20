@@ -14,12 +14,16 @@ Environment variables required (set via ECS task definition / Secrets Manager):
   - SUPERSET_PUBLIC_URL: Public URL of your Superset instance (via CloudFront)
 """
 
+from __future__ import annotations
+
 import logging
 import os
+import typing as t
 from datetime import timedelta
 
 from celery.schedules import crontab
 from custom_sso_security_manager import CognitoSecurityManager
+from flask import Flask
 from flask_appbuilder.security.manager import AUTH_OAUTH
 
 logger = logging.getLogger()
@@ -66,15 +70,15 @@ PREFERRED_URL_SCHEME = "https"
 # CloudFront terminates TLS but ALB→ECS is plain HTTP, so the request scheme is "http".
 # PREFERRED_URL_SCHEME alone doesn't override during active requests; we need to set
 # wsgi.url_scheme in the environ before Flask creates the request context.
-def FLASK_APP_MUTATOR(app):  # noqa: N802
+def FLASK_APP_MUTATOR(app: Flask) -> None:  # noqa: N802
     """Wrap WSGI app to force HTTPS scheme for all generated URLs."""
     _inner_wsgi = app.wsgi_app
 
     class _ForceHTTPS:
-        def __init__(self, wsgi):
+        def __init__(self, wsgi: t.Any) -> None:
             self.wsgi = wsgi
 
-        def __call__(self, environ, start_response):
+        def __call__(self, environ: dict[str, t.Any], start_response: t.Any) -> t.Any:
             environ["wsgi.url_scheme"] = "https"
             return self.wsgi(environ, start_response)
 
