@@ -224,6 +224,45 @@ CORS_OPTIONS = {
 FAB_API_SWAGGER_UI = False
 
 # ---------------------------------------------------------------------------
+# Branding (A&M / Markets Data Lab)
+# ---------------------------------------------------------------------------
+APP_NAME = "Markets Data Lab"
+APP_ICON = "/static/assets/images/am-mdl-color-logo.png"
+APP_ICON_WIDTH = 120
+LOGO_TARGET_PATH = "/"
+LOGO_TOOLTIP = "Markets Data Lab"
+LOGO_RIGHT_TEXT = ""
+FAVICONS = [{"href": "/static/assets/images/am-mdl-color-logo.png"}]
+
+THEME_DEFAULT = {
+    "token": {
+        "brandAppName": "Markets Data Lab",
+        "brandLogoAlt": "A&M Markets Data Lab",
+        "brandLogoUrl": "/static/assets/images/am-mdl-color-logo.png",
+        "brandLogoMargin": "18px 0",
+        "brandLogoHref": "/",
+        "brandLogoHeight": "28px",
+        "brandSpinnerUrl": None,
+        "brandSpinnerSvg": None,
+    },
+    "algorithm": "default",
+}
+
+THEME_DARK = {
+    "token": {
+        "brandAppName": "Markets Data Lab",
+        "brandLogoAlt": "A&M Markets Data Lab",
+        "brandLogoUrl": "/static/assets/images/am-mdl-white-logo.png",
+        "brandLogoMargin": "18px 0",
+        "brandLogoHref": "/",
+        "brandLogoHeight": "28px",
+        "brandSpinnerUrl": None,
+        "brandSpinnerSvg": None,
+    },
+    "algorithm": "dark",
+}
+
+# ---------------------------------------------------------------------------
 # Feature flags
 # ---------------------------------------------------------------------------
 FEATURE_FLAGS = {
