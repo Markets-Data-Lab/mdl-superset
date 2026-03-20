@@ -58,6 +58,7 @@ export class SupersetEcsStack extends cdk.Stack {
       directory: "../../", // repo root
       file: "deployment/Dockerfile",
       platform: ecr_assets.Platform.LINUX_AMD64,
+      exclude: ["deployment/cdk/cdk.out", "deployment/cdk/node_modules"],
       buildArgs: {
         BUILD_TRANSLATIONS: "true",
       },
@@ -111,19 +112,25 @@ export class SupersetEcsStack extends cdk.Stack {
       allowAllOutbound: true,
     });
 
-    // Allow ECS → RDS
-    props.dbSecurityGroup.addIngressRule(
-      ecsSg,
-      ec2.Port.tcp(parseInt(props.rdsPort)),
-      "ECS to RDS"
-    );
+    // Allow ECS → RDS (standalone ingress to avoid cross-stack cycle)
+    new ec2.CfnSecurityGroupIngress(this, "EcsToRds", {
+      ipProtocol: "tcp",
+      fromPort: parseInt(props.rdsPort),
+      toPort: parseInt(props.rdsPort),
+      groupId: props.dbSecurityGroup.securityGroupId,
+      sourceSecurityGroupId: ecsSg.securityGroupId,
+      description: "ECS to RDS",
+    });
 
-    // Allow ECS → Redis
-    props.redisSecurityGroup.addIngressRule(
-      ecsSg,
-      ec2.Port.tcp(parseInt(props.redisPort)),
-      "ECS to Redis"
-    );
+    // Allow ECS → Redis (standalone ingress to avoid cross-stack cycle)
+    new ec2.CfnSecurityGroupIngress(this, "EcsToRedis", {
+      ipProtocol: "tcp",
+      fromPort: parseInt(props.redisPort),
+      toPort: parseInt(props.redisPort),
+      groupId: props.redisSecurityGroup.securityGroupId,
+      sourceSecurityGroupId: ecsSg.securityGroupId,
+      description: "ECS to Redis",
+    });
 
     // ---------------------------------------------------------------
     // Shared environment variables & secrets
@@ -209,20 +216,36 @@ export class SupersetEcsStack extends cdk.Stack {
     });
 
     // ---------------------------------------------------------------
-    // Application Load Balancer
+    // Application Load Balancer (CloudFront-only access)
     // ---------------------------------------------------------------
     const alb = new elbv2.ApplicationLoadBalancer(this, "SupersetAlb", {
       vpc: props.vpc,
-      internetFacing: true,
+      internetFacing: true, // Must be internet-facing for CloudFront origin
     });
+
+    // Restrict ALB to CloudFront traffic only using the AWS managed prefix list.
+    // This prevents direct access to the ALB, bypassing CloudFront.
+    const albSg = alb.connections.securityGroups[0];
+    // Remove the default "allow all" ingress rule by adding only CloudFront
+    albSg.addIngressRule(
+      ec2.Peer.prefixList(
+        // AWS-managed prefix list for CloudFront origin-facing IPs
+        // Look up the ID: aws ec2 describe-managed-prefix-lists --filters Name=prefix-list-name,Values=com.amazonaws.global.cloudfront.origin-facing
+        this.node.tryGetContext("cloudfrontPrefixListId") ?? "pl-b6a144df" // us-east-2 default
+      ),
+      ec2.Port.tcp(80),
+      "Allow inbound from CloudFront only"
+    );
 
     const listener = alb.addListener("HttpListener", {
       port: 80,
       protocol: elbv2.ApplicationProtocol.HTTP,
+      open: false, // Do not auto-add 0.0.0.0/0 ingress
     });
 
     listener.addTargets("WebTarget", {
       port: 8088,
+      protocol: elbv2.ApplicationProtocol.HTTP,
       targets: [webService],
       healthCheck: {
         path: "/health",

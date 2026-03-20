@@ -133,10 +133,9 @@ AUTH_ROLES_SYNC_AT_LOGIN = True
 
 # Map Cognito groups to Superset roles
 AUTH_ROLES_MAPPING = {
-    "superset-admins": ["Admin"],
-    "superset-alpha": ["Alpha"],
-    "superset-analysts": ["Gamma"],
-    "superset-sql-lab": ["sql_lab"],
+    "am-infra-emi-admin": ["Admin"],
+    "am-infra-emi": ["Alpha"],
+    "am-non-emi": ["Gamma"],
 }
 
 OAUTH_PROVIDERS = [

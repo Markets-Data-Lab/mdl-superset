@@ -10,7 +10,7 @@ Architecture: **CloudFront → ALB → ECS Fargate (Superset)**, with Cognito OI
 - An existing Cognito User Pool with:
   - An app client (with client secret enabled)
   - A domain configured
-  - Groups created: `superset-admins`, `superset-alpha`, `superset-analysts`
+  - Groups created: `am-infra-emi-admin`, `am-infra-emi`, `am-non-emi`
   - Callback URL set to `https://<your-cloudfront-domain>/oauth-authorized/cognito`
 - An existing CloudFront distribution
 - Snowflake account with connection details
@@ -92,7 +92,9 @@ Monitor the init task in CloudWatch Logs under `/ecs/superset/init`.
 4. Add the Cognito callback URL to your Cognito app client:
    - `https://<cloudfront-domain>/oauth-authorized/cognito`
 
-## Step 5: Connect Snowflake
+## Step 5: Connect Snowflake (dbt & dbt Elementary)
+
+Superset reads from the tables and views materialized by dbt and dbt Elementary in Snowflake.
 
 1. Log into Superset as admin
 2. Go to **Data → Databases → + Database**
@@ -103,15 +105,60 @@ Monitor the init task in CloudWatch Logs under `/ecs/superset/init`.
    ```
    Or use key-pair authentication via the advanced settings.
 
+### Recommended Snowflake databases to connect
+
+| Database | Purpose |
+|----------|---------|
+| dbt production database | Tables/views materialized by dbt (marts, staging, intermediate models) |
+| dbt Elementary database | dbt Elementary observability tables (test results, model run times, data quality) |
+
+**Tips:**
+- Use a **read-only Snowflake role** for the Superset service account
+- Point Superset at the **production** dbt target (not dev/CI schemas)
+- dbt Elementary tables are typically in an `elementary` schema — add this as a separate dataset source
+- Use Superset's **SQL Lab** to explore available schemas before building dashboards
+
 ## Updating Superset
 
-```bash
-# Rebuild and push image
-cd deployment/cdk
-npx cdk deploy SupersetEcs
+Pushes to `main` automatically deploy via GitHub Actions (`.github/workflows/deploy-ecs.yml`).
 
-# Run migrations (if needed)
-aws ecs run-task --cluster ... --task-definition <InitTaskDefArn> ...
+The workflow:
+1. Builds a new Docker image with your changes
+2. Deploys the updated ECS services via CDK
+3. Runs database migrations automatically
+
+### CI/CD Setup (one-time)
+
+1. **Create an IAM role for GitHub Actions** with OIDC trust (no long-lived keys):
+   - Trust policy: allow `token.actions.githubusercontent.com` for your repo
+   - Permissions: CDK deploy (CloudFormation, ECS, ECR, EC2, IAM, Secrets Manager, Logs)
+
+2. **Add these GitHub secrets** (Settings → Secrets and variables → Actions):
+
+   | Secret | Value |
+   |--------|-------|
+   | `AWS_DEPLOY_ROLE_ARN` | `arn:aws:iam::<account>:role/<your-deploy-role>` |
+   | `COGNITO_DOMAIN` | Your Cognito user pool domain |
+   | `COGNITO_CLIENT_ID` | Your Cognito app client ID |
+   | `COGNITO_USER_POOL_ID` | Your Cognito user pool ID |
+   | `SUPERSET_PUBLIC_URL` | `https://<your-cloudfront-domain>` |
+
+3. **Add these GitHub variables** (Settings → Secrets and variables → Actions → Variables):
+
+   | Variable | Value |
+   |----------|-------|
+   | `AWS_REGION` | Your AWS region (e.g. `us-east-1`) |
+   | `CLOUDFRONT_PREFIX_LIST_ID` | CloudFront prefix list ID (e.g. `pl-3b927c52` for us-east-1) |
+
+### Manual deploy
+
+```bash
+cd deployment/cdk
+npx cdk deploy SupersetEcs \
+  -c cognitoDomain=<domain> \
+  -c cognitoClientId=<id> \
+  -c cognitoUserPoolId=<pool-id> \
+  -c supersetPublicUrl=https://<cloudfront-domain>
 ```
 
 ## Troubleshooting
@@ -144,6 +191,8 @@ aws ecs execute-command \
 
 ## Security Notes
 
+- **Not publicly accessible** — ALB security group restricts inbound to CloudFront managed prefix list only (no direct ALB access)
+- **Authentication required** — Cognito OIDC enforces login; only users in mapped groups (`am-infra-emi-admin`, `am-infra-emi`, `am-non-emi`) can access Superset
 - All secrets are stored in AWS Secrets Manager (never in env files or code)
 - RDS and Redis are in isolated subnets with no public access
 - ECS tasks run in private subnets with NAT gateway for outbound
