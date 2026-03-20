@@ -61,24 +61,58 @@ jobs:
 
       - name: Run database migrations
         run: |
+          set +e  # Don't exit immediately on failure
+
           CLUSTER_NAME=$(aws ecs list-clusters --query "clusterArns[?contains(@, 'SupersetCluster')]" --output text | head -1)
           CLUSTER_NAME=$(basename "$CLUSTER_NAME")
+          echo "Cluster: $CLUSTER_NAME"
 
-          TASK_DEF=$(aws ecs list-task-definitions --family-prefix SupersetEcs --sort DESC --query "taskDefinitionArns[?contains(@, 'InitTaskDef')]" --output text | head -1)
+          # List all task definitions in the stack to help debug naming
+          echo "All SupersetEcs task definitions:"
+          aws ecs list-task-definitions --family-prefix SupersetEcs --sort DESC --output text
+
+          # CDK generates family names like "SupersetEcsInitTaskDef<HASH>" (no hyphens)
+          # Use a broader match then filter, with fallback to exact family listing
+          TASK_DEF=$(aws ecs list-task-definitions --family-prefix SupersetEcs --sort DESC \
+            --query "taskDefinitionArns[?contains(@, 'InitTaskDef')]" --output text | head -1)
+
+          # Fallback: if JMESPath filter returned empty, try case-insensitive match
+          if [ -z "$TASK_DEF" ] || [ "$TASK_DEF" = "None" ]; then
+            echo "InitTaskDef not found with family-prefix SupersetEcs, trying broader search..."
+            TASK_DEF=$(aws ecs list-task-definitions --sort DESC \
+              --query "taskDefinitionArns[?contains(@, 'Init')]" --output text | head -1)
+          fi
+
+          if [ -z "$TASK_DEF" ] || [ "$TASK_DEF" = "None" ]; then
+            echo "ERROR: Could not find init task definition. CDK may not have registered it yet."
+            echo "Available task definition families:"
+            aws ecs list-task-definition-families --status ACTIVE --output text
+            exit 1
+          fi
+
+          echo "Task Definition: $TASK_DEF"
 
           SUBNETS=$(aws ec2 describe-subnets \
             --filters "Name=tag:aws-cdk:subnet-name,Values=Private" \
             --query "Subnets[].SubnetId" --output text | tr '\t' ',')
+          echo "Subnets: $SUBNETS"
 
           SG=$(aws ec2 describe-security-groups \
             --filters "Name=group-name,Values=*EcsSg*" \
             --query "SecurityGroups[0].GroupId" --output text)
+          echo "Security Group: $SG"
 
-          aws ecs run-task \
+          TASK_ARN=$(aws ecs run-task \
             --cluster "$CLUSTER_NAME" \
             --task-definition "$TASK_DEF" \
             --launch-type FARGATE \
             --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SG]}" \
-            --query "tasks[0].taskArn" --output text
+            --query "tasks[0].taskArn" --output text)
 
-          echo "Migration task started. Check CloudWatch logs at /ecs/superset/init"
+          if [ $? -ne 0 ] || [ -z "$TASK_ARN" ] || [ "$TASK_ARN" = "None" ]; then
+            echo "ERROR: Failed to start migration task"
+            exit 1
+          fi
+
+          echo "Migration task started: $TASK_ARN"
+          echo "Check CloudWatch logs at /ecs/superset/init"
