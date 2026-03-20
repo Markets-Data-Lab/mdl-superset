@@ -920,9 +920,9 @@ THEME_DEFAULT: Theme = {
         "brandAppName": APP_NAME,
         "brandLogoAlt": "Apache Superset",
         "brandLogoUrl": APP_ICON,
-        "brandLogoMargin": "0",
+        "brandLogoMargin": "18px 0",
         "brandLogoHref": "/",
-        "brandLogoHeight": "64px",
+        "brandLogoHeight": "24px",
         # Spinner
         "brandSpinnerUrl": None,
         "brandSpinnerSvg": None,
