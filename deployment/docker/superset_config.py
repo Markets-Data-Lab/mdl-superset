@@ -51,8 +51,8 @@ SUPERSET_LOAD_EXAMPLES = False
 # Webserver
 ENABLE_PROXY_FIX = True  # Required behind ALB/CloudFront
 PROXY_FIX_CONFIG = {
-    "x_for": 2,  # CloudFront -> ALB -> ECS
-    "x_proto": 2,
+    "x_for": 1,
+    "x_proto": 1,  # Trust X-Forwarded-Proto from ALB/CloudFront
     "x_host": 1,
     "x_port": 0,
     "x_prefix": 0,
