@@ -39,7 +39,7 @@ class CognitoSecurityManager(SupersetSecurityManager):
 
     def oauth_user_info(
         self, provider: str, response: dict[str, str] | None = None
-    ) -> dict[str, str]:
+    ) -> dict[str, Any]:
         """Extract user info from the Cognito OIDC token.
 
         Args:
