@@ -33,6 +33,14 @@ export class SupersetEcsStack extends cdk.Stack {
     const supersetPublicUrl =
       this.node.tryGetContext("supersetPublicUrl") ?? "https://superset.example.com";
 
+    // Snowflake connection (optional — set snowflakeAccount to enable)
+    const snowflakeAccount = this.node.tryGetContext("snowflakeAccount") ?? "";
+    const snowflakeUser = this.node.tryGetContext("snowflakeUser") ?? "";
+    const snowflakeDatabase = this.node.tryGetContext("snowflakeDatabase") ?? "";
+    const snowflakeSchema = this.node.tryGetContext("snowflakeSchema") ?? "PUBLIC";
+    const snowflakeWarehouse = this.node.tryGetContext("snowflakeWarehouse") ?? "";
+    const snowflakeRole = this.node.tryGetContext("snowflakeRole") ?? "";
+
     // ---------------------------------------------------------------
     // Secrets
     // ---------------------------------------------------------------
@@ -48,6 +56,17 @@ export class SupersetEcsStack extends cdk.Stack {
       {
         secretName: "superset/cognito-client-secret",
         description: "Cognito app client secret for Superset OIDC",
+      }
+    );
+
+    // Snowflake key-pair auth: private key stored in Secrets Manager
+    const snowflakePrivateKey = new secretsmanager.Secret(
+      this,
+      "SnowflakePrivateKey",
+      {
+        secretName: "superset/snowflake-private-key",
+        description:
+          "PEM-encoded PKCS8 private key for Snowflake key-pair authentication",
       }
     );
 
@@ -146,12 +165,20 @@ export class SupersetEcsStack extends cdk.Stack {
       COGNITO_REGION: cognitoRegion,
       SUPERSET_PUBLIC_URL: supersetPublicUrl,
       REDIS_URL: `redis://${props.redisEndpoint}:${props.redisPort}`,
+      // Snowflake connection details (bootstrap skips if SNOWFLAKE_ACCOUNT is empty)
+      SNOWFLAKE_ACCOUNT: snowflakeAccount,
+      SNOWFLAKE_USER: snowflakeUser,
+      SNOWFLAKE_DATABASE: snowflakeDatabase,
+      SNOWFLAKE_SCHEMA: snowflakeSchema,
+      SNOWFLAKE_WAREHOUSE: snowflakeWarehouse,
+      SNOWFLAKE_ROLE: snowflakeRole,
     };
 
     const sharedSecrets: Record<string, ecs.Secret> = {
       SECRET_KEY: ecs.Secret.fromSecretsManager(supersetSecretKey),
       DATABASE_URL: ecs.Secret.fromSecretsManager(props.dbSecret, "url"),
       COGNITO_CLIENT_SECRET: ecs.Secret.fromSecretsManager(cognitoClientSecret),
+      SNOWFLAKE_PRIVATE_KEY: ecs.Secret.fromSecretsManager(snowflakePrivateKey),
     };
 
     // Helper to build the DATABASE_URL from RDS secret fields

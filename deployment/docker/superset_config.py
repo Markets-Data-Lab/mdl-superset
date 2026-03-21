@@ -12,6 +12,16 @@ Environment variables required (set via ECS task definition / Secrets Manager):
   - COGNITO_REGION: AWS region (e.g. us-east-1)
   - COGNITO_USER_POOL_ID: Cognito user pool ID
   - SUPERSET_PUBLIC_URL: Public URL of your Superset instance (via CloudFront)
+
+Snowflake connection (optional — set SNOWFLAKE_ACCOUNT to enable):
+  - SNOWFLAKE_ACCOUNT: Snowflake account identifier (e.g. xy12345.us-east-1)
+  - SNOWFLAKE_USER: Snowflake service account username
+  - SNOWFLAKE_DATABASE: Snowflake database name
+  - SNOWFLAKE_SCHEMA: Snowflake schema (default: PUBLIC)
+  - SNOWFLAKE_WAREHOUSE: Snowflake compute warehouse
+  - SNOWFLAKE_ROLE: Snowflake role
+  - SNOWFLAKE_PRIVATE_KEY: PEM-encoded PKCS8 private key for key-pair auth
+  - SNOWFLAKE_PRIVATE_KEY_PASS: Private key passphrase (optional, if key is encrypted)
 """
 
 from __future__ import annotations
@@ -27,6 +37,80 @@ from flask import Flask
 from flask_appbuilder.security.manager import AUTH_OAUTH
 
 logger = logging.getLogger()
+
+
+# ---------------------------------------------------------------------------
+# Snowflake connection bootstrap
+# ---------------------------------------------------------------------------
+SNOWFLAKE_ACCOUNT = os.environ.get("SNOWFLAKE_ACCOUNT", "")  # e.g. xy12345.us-east-1
+SNOWFLAKE_USER = os.environ.get("SNOWFLAKE_USER", "")
+SNOWFLAKE_DATABASE = os.environ.get("SNOWFLAKE_DATABASE", "")
+SNOWFLAKE_SCHEMA = os.environ.get("SNOWFLAKE_SCHEMA", "PUBLIC")
+SNOWFLAKE_WAREHOUSE = os.environ.get("SNOWFLAKE_WAREHOUSE", "")
+SNOWFLAKE_ROLE = os.environ.get("SNOWFLAKE_ROLE", "")
+# PEM-encoded PKCS8 private key (the full -----BEGIN/END----- block)
+SNOWFLAKE_PRIVATE_KEY = os.environ.get("SNOWFLAKE_PRIVATE_KEY", "")
+SNOWFLAKE_PRIVATE_KEY_PASS = os.environ.get("SNOWFLAKE_PRIVATE_KEY_PASS")
+
+
+def _bootstrap_snowflake(app: Flask) -> None:
+    """Create or update the Snowflake database connection on startup.
+
+    Reads connection details from environment variables. Skips if
+    SNOWFLAKE_ACCOUNT is not set.
+    """
+    import json
+
+    if not SNOWFLAKE_ACCOUNT:
+        logger.info("SNOWFLAKE_ACCOUNT not set — skipping Snowflake bootstrap")
+        return
+
+    with app.app_context():
+        # Import here to avoid circular imports at module level
+        from superset.extensions import db as sa_db
+        from superset.models.core import Database
+
+        snowflake_uri = (
+            f"snowflake://{SNOWFLAKE_USER}@{SNOWFLAKE_ACCOUNT}"
+            f"/{SNOWFLAKE_DATABASE}/{SNOWFLAKE_SCHEMA}"
+            f"?warehouse={SNOWFLAKE_WAREHOUSE}&role={SNOWFLAKE_ROLE}"
+        )
+
+        encrypted_extra = json.dumps({
+            "auth_method": "keypair",
+            "auth_params": {
+                "privatekey_body": SNOWFLAKE_PRIVATE_KEY,
+                "privatekey_pass": SNOWFLAKE_PRIVATE_KEY_PASS,
+            },
+        })
+
+        db_name = f"Snowflake - {SNOWFLAKE_DATABASE}"
+        existing = sa_db.session.query(Database).filter_by(
+            database_name=db_name,
+        ).first()
+
+        if existing:
+            existing.sqlalchemy_uri = snowflake_uri
+            existing.encrypted_extra = encrypted_extra
+            logger.info("Updated existing Snowflake connection: %s", db_name)
+        else:
+            new_db = Database(
+                database_name=db_name,
+                sqlalchemy_uri=snowflake_uri,
+                encrypted_extra=encrypted_extra,
+                expose_in_sqllab=True,
+                allow_ctas=False,
+                allow_cvas=False,
+                allow_dml=False,
+            )
+            sa_db.session.add(new_db)
+            logger.info("Created Snowflake connection: %s", db_name)
+
+        sa_db.session.commit()
+
+
+# Allow Snowflake key-pair authentication
+ALLOWED_EXTRA_AUTHENTICATIONS: dict[str, dict[str, t.Any]] = {}
 
 # ---------------------------------------------------------------------------
 # Core settings
@@ -71,7 +155,7 @@ PREFERRED_URL_SCHEME = "https"
 # PREFERRED_URL_SCHEME alone doesn't override during active requests; we need to set
 # wsgi.url_scheme in the environ before Flask creates the request context.
 def FLASK_APP_MUTATOR(app: Flask) -> None:  # noqa: N802
-    """Wrap WSGI app to force HTTPS scheme for all generated URLs."""
+    """Wrap WSGI app to force HTTPS scheme and bootstrap Snowflake connection."""
     _inner_wsgi = app.wsgi_app
 
     class _ForceHTTPS:
@@ -83,6 +167,8 @@ def FLASK_APP_MUTATOR(app: Flask) -> None:  # noqa: N802
             return self.wsgi(environ, start_response)
 
     app.wsgi_app = _ForceHTTPS(_inner_wsgi)
+
+    _bootstrap_snowflake(app)
 
 
 # ---------------------------------------------------------------------------
