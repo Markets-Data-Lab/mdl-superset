@@ -59,8 +59,6 @@ def _bootstrap_snowflake(app: Flask) -> None:
     Reads connection details from environment variables. Skips if
     SNOWFLAKE_ACCOUNT is not set.
     """
-    import json
-
     if not SNOWFLAKE_ACCOUNT:
         logger.info("SNOWFLAKE_ACCOUNT not set — skipping Snowflake bootstrap")
         return
@@ -69,6 +67,7 @@ def _bootstrap_snowflake(app: Flask) -> None:
         # Import here to avoid circular imports at module level
         from superset.extensions import db as sa_db
         from superset.models.core import Database
+        from superset.utils import json
 
         snowflake_uri = (
             f"snowflake://{SNOWFLAKE_USER}@{SNOWFLAKE_ACCOUNT}"
