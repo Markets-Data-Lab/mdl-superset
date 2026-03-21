@@ -57,7 +57,13 @@ jobs:
             -c cognitoUserPoolId=${{ secrets.COGNITO_USER_POOL_ID }} \
             -c cognitoRegion=${{ vars.AWS_REGION || 'us-east-2' }} \
             -c supersetPublicUrl=${{ secrets.SUPERSET_PUBLIC_URL }} \
-            -c cloudfrontPrefixListId=${{ vars.CLOUDFRONT_PREFIX_LIST_ID || 'pl-b6a144df' }}
+            -c cloudfrontPrefixListId=${{ vars.CLOUDFRONT_PREFIX_LIST_ID || 'pl-b6a144df' }} \
+            -c snowflakeAccount=${{ secrets.SNOWFLAKE_ACCOUNT }} \
+            -c snowflakeUser=${{ secrets.SNOWFLAKE_USER }} \
+            -c snowflakeDatabase=${{ secrets.SNOWFLAKE_DATABASE }} \
+            -c snowflakeSchema=${{ secrets.SNOWFLAKE_SCHEMA || 'PUBLIC' }} \
+            -c snowflakeWarehouse=${{ secrets.SNOWFLAKE_WAREHOUSE }} \
+            -c snowflakeRole=${{ secrets.SNOWFLAKE_ROLE }}
 
       - name: Run database migrations
         run: |
