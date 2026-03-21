@@ -45,9 +45,7 @@ class SupersetAuthView(BaseSupersetView, AuthView):
         if self.appbuilder.sm.auth_type == AUTH_OAUTH:
             providers = list(self.appbuilder.sm.oauth_remotes.keys())
             if len(providers) == 1:
-                return redirect(
-                    f"/login/{providers[0]}"
-                )
+                return redirect(f"/login/{providers[0]}")
 
         return super().render_app_template()
 
