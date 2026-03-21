@@ -76,18 +76,24 @@ def _bootstrap_snowflake(app: Flask) -> None:
             f"?warehouse={SNOWFLAKE_WAREHOUSE}&role={SNOWFLAKE_ROLE}"
         )
 
-        encrypted_extra = json.dumps({
-            "auth_method": "keypair",
-            "auth_params": {
-                "privatekey_body": SNOWFLAKE_PRIVATE_KEY,
-                "privatekey_pass": SNOWFLAKE_PRIVATE_KEY_PASS,
-            },
-        })
+        encrypted_extra = json.dumps(
+            {
+                "auth_method": "keypair",
+                "auth_params": {
+                    "privatekey_body": SNOWFLAKE_PRIVATE_KEY,
+                    "privatekey_pass": SNOWFLAKE_PRIVATE_KEY_PASS,
+                },
+            }
+        )
 
         db_name = f"Snowflake - {SNOWFLAKE_DATABASE}"
-        existing = sa_db.session.query(Database).filter_by(
-            database_name=db_name,
-        ).first()
+        existing = (
+            sa_db.session.query(Database)
+            .filter_by(
+                database_name=db_name,
+            )
+            .first()
+        )
 
         if existing:
             existing.sqlalchemy_uri = snowflake_uri
@@ -281,6 +287,14 @@ OAUTH_PROVIDERS = [
 ]
 
 CUSTOM_SECURITY_MANAGER = CognitoSecurityManager
+
+# Log out of both Superset AND the Cognito hosted UI session.
+# After Cognito clears its session it redirects back to Superset's login page.
+LOGOUT_REDIRECT_URL = (
+    f"https://{COGNITO_DOMAIN}.auth.{COGNITO_REGION}.amazoncognito.com/logout"
+    f"?client_id={COGNITO_CLIENT_ID}"
+    f"&logout_uri={SUPERSET_PUBLIC_URL}/login/"
+)
 
 # ---------------------------------------------------------------------------
 # Security hardening
