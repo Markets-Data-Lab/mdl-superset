@@ -10,13 +10,32 @@ Handles:
 from __future__ import annotations
 
 import logging
+from typing import Any
+
+from flask_appbuilder.security.views import AuthOAuthView, expose
 
 from superset.security import SupersetSecurityManager
 
 logger = logging.getLogger(__name__)
 
 
+class AutoRedirectOAuthView(AuthOAuthView):
+    """Skip the Superset login page and redirect straight to Cognito."""
+
+    @expose("/login/", methods=["GET", "POST"])
+    @expose("/login/<provider>", methods=["GET", "POST"])
+    def login(self, provider: str | None = None) -> Any:
+        if provider is None:
+            # Single OAuth provider configured — go directly to it
+            providers = list(self.appbuilder.sm.oauth_remotes.keys())
+            if len(providers) == 1:
+                provider = providers[0]
+        return super().login(provider)
+
+
 class CognitoSecurityManager(SupersetSecurityManager):
+    authoauthview = AutoRedirectOAuthView
+
     def oauth_user_info(
         self, provider: str, response: dict[str, str] | None = None
     ) -> dict[str, str]:
