@@ -12,6 +12,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+import jwt
 from flask_appbuilder.security.views import AuthOAuthView, expose
 
 from superset.security import SupersetSecurityManager
@@ -60,8 +61,24 @@ class CognitoSecurityManager(SupersetSecurityManager):
         first_name = userinfo.get("given_name", username)
         last_name = userinfo.get("family_name", "")
 
-        # Cognito groups come as a list in the token
-        cognito_groups = userinfo.get("cognito:groups", [])
+        # Cognito's /oauth2/userInfo endpoint does NOT return groups.
+        # Groups are only available in the ID token, so decode it to
+        # extract cognito:groups.
+        cognito_groups: list[str] = []
+        if response and "id_token" in response:
+            try:
+                id_claims = jwt.decode(
+                    response["id_token"],
+                    options={"verify_signature": False},
+                )
+                cognito_groups = id_claims.get("cognito:groups", [])
+            except Exception:
+                logger.warning("Failed to decode Cognito ID token", exc_info=True)
+
+        # Fall back to userinfo in case the provider config changes
+        if not cognito_groups:
+            cognito_groups = userinfo.get("cognito:groups", [])
+
         if isinstance(cognito_groups, str):
             cognito_groups = [cognito_groups]
 
