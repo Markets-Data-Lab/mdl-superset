@@ -48,8 +48,18 @@ SNOWFLAKE_DATABASE = os.environ.get("SNOWFLAKE_DATABASE", "")
 SNOWFLAKE_SCHEMA = os.environ.get("SNOWFLAKE_SCHEMA", "PUBLIC")
 SNOWFLAKE_WAREHOUSE = os.environ.get("SNOWFLAKE_WAREHOUSE", "")
 SNOWFLAKE_ROLE = os.environ.get("SNOWFLAKE_ROLE", "")
-# PEM-encoded PKCS8 private key (the full -----BEGIN/END----- block)
-SNOWFLAKE_PRIVATE_KEY = os.environ.get("SNOWFLAKE_PRIVATE_KEY", "")
+# PEM-encoded PKCS8 private key, base64-encoded to preserve newlines through CDK context
+import base64
+
+_raw_key = os.environ.get("SNOWFLAKE_PRIVATE_KEY", "")
+if _raw_key:
+    try:
+        SNOWFLAKE_PRIVATE_KEY = base64.b64decode(_raw_key).decode("utf-8")
+    except Exception:
+        # Fall back to raw value in case it's already PEM-formatted
+        SNOWFLAKE_PRIVATE_KEY = _raw_key
+else:
+    SNOWFLAKE_PRIVATE_KEY = ""
 SNOWFLAKE_PRIVATE_KEY_PASS = os.environ.get("SNOWFLAKE_PRIVATE_KEY_PASS")
 
 
