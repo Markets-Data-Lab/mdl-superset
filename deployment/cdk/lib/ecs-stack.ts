@@ -40,6 +40,7 @@ export class SupersetEcsStack extends cdk.Stack {
     const snowflakeSchema = this.node.tryGetContext("snowflakeSchema") ?? "PUBLIC";
     const snowflakeWarehouse = this.node.tryGetContext("snowflakeWarehouse") ?? "";
     const snowflakeRole = this.node.tryGetContext("snowflakeRole") ?? "";
+    const snowflakePrivateKey = this.node.tryGetContext("snowflakePrivateKey") ?? "";
 
     // ---------------------------------------------------------------
     // Secrets
@@ -59,16 +60,7 @@ export class SupersetEcsStack extends cdk.Stack {
       }
     );
 
-    // Snowflake key-pair auth: private key stored in Secrets Manager
-    const snowflakePrivateKey = new secretsmanager.Secret(
-      this,
-      "SnowflakePrivateKey",
-      {
-        secretName: "superset/snowflake-private-key",
-        description:
-          "PEM-encoded PKCS8 private key for Snowflake key-pair authentication",
-      }
-    );
+    // Snowflake private key is passed via CDK context from GitHub secrets
 
     // ---------------------------------------------------------------
     // Docker image (built from repo root)
@@ -172,13 +164,13 @@ export class SupersetEcsStack extends cdk.Stack {
       SNOWFLAKE_SCHEMA: snowflakeSchema,
       SNOWFLAKE_WAREHOUSE: snowflakeWarehouse,
       SNOWFLAKE_ROLE: snowflakeRole,
+      SNOWFLAKE_PRIVATE_KEY: snowflakePrivateKey,
     };
 
     const sharedSecrets: Record<string, ecs.Secret> = {
       SECRET_KEY: ecs.Secret.fromSecretsManager(supersetSecretKey),
       DATABASE_URL: ecs.Secret.fromSecretsManager(props.dbSecret, "url"),
       COGNITO_CLIENT_SECRET: ecs.Secret.fromSecretsManager(cognitoClientSecret),
-      SNOWFLAKE_PRIVATE_KEY: ecs.Secret.fromSecretsManager(snowflakePrivateKey),
     };
 
     // Helper to build the DATABASE_URL from RDS secret fields
