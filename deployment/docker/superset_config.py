@@ -26,6 +26,7 @@ Snowflake connection (optional — set SNOWFLAKE_ACCOUNT to enable):
 
 from __future__ import annotations
 
+import base64
 import logging
 import os
 import typing as t
@@ -49,8 +50,6 @@ SNOWFLAKE_SCHEMA = os.environ.get("SNOWFLAKE_SCHEMA", "PUBLIC")
 SNOWFLAKE_WAREHOUSE = os.environ.get("SNOWFLAKE_WAREHOUSE", "")
 SNOWFLAKE_ROLE = os.environ.get("SNOWFLAKE_ROLE", "")
 # PEM-encoded PKCS8 private key, base64-encoded to preserve newlines through CDK context
-import base64
-
 _raw_key = os.environ.get("SNOWFLAKE_PRIVATE_KEY", "")
 if _raw_key:
     try:
