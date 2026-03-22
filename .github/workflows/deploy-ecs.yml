@@ -47,6 +47,11 @@ jobs:
         working-directory: deployment/cdk
         run: npm ci
 
+      - name: Base64-encode Snowflake private key
+        run: echo "$SNOWFLAKE_PK" | base64 -w 0 > /tmp/sf_pk_b64.txt
+        env:
+          SNOWFLAKE_PK: ${{ secrets.SNOWFLAKE_PRIVATE_KEY }}
+
       - name: CDK deploy (ECS stack only)
         working-directory: deployment/cdk
         run: |
@@ -64,7 +69,7 @@ jobs:
             -c snowflakeSchema=${{ secrets.SNOWFLAKE_SCHEMA || 'PUBLIC' }} \
             -c snowflakeWarehouse=${{ secrets.SNOWFLAKE_WAREHOUSE }} \
             -c snowflakeRole=${{ secrets.SNOWFLAKE_ROLE }} \
-            -c snowflakePrivateKey="$(echo "${{ secrets.SNOWFLAKE_PRIVATE_KEY }}" | base64 -w 0)"
+            -c snowflakePrivateKey="$(cat /tmp/sf_pk_b64.txt)"
 
       - name: Run database migrations
         run: |
