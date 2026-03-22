@@ -63,7 +63,8 @@ jobs:
             -c snowflakeDatabase=${{ secrets.SNOWFLAKE_DATABASE }} \
             -c snowflakeSchema=${{ secrets.SNOWFLAKE_SCHEMA || 'PUBLIC' }} \
             -c snowflakeWarehouse=${{ secrets.SNOWFLAKE_WAREHOUSE }} \
-            -c snowflakeRole=${{ secrets.SNOWFLAKE_ROLE }}
+            -c snowflakeRole=${{ secrets.SNOWFLAKE_ROLE }} \
+            -c snowflakePrivateKey="${{ secrets.SNOWFLAKE_PRIVATE_KEY }}"
 
       - name: Run database migrations
         run: |
