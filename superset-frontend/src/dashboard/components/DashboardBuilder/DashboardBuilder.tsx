@@ -704,9 +704,7 @@ const DashboardBuilder = () => {
           </StyledDashboardContent>
         </DashboardContentWrapper>
       </StyledContent>
-      {!editMode && (
-        <CalibrationPanel defaultDock="right" />
-      )}
+      {!editMode && <CalibrationPanel defaultDock="right" />}
       {dashboardIsSaving && (
         <Loading
           css={css`

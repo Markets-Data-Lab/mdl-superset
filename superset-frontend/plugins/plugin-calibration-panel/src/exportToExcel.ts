@@ -1,24 +1,81 @@
 /**
- * exportToExcel.ts
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Exports calibration results to a formatted .xlsx file.
- * Uses SheetJS (xlsx) which is already in superset-frontend/package.json.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Output workbook has four sheets:
- *   1. Summary       — run metadata + plain-English explanation
- *   2. Field Matches — matched columns with confidence and reasoning
- *   3. Anomalies     — flagged issues with severity
- *   4. Corrections   — suggested formulas and transformations
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
-import type { CalibrationResult, DatasetPayload } from './types';
+import type { CalibrationResult } from './types';
 
 // SheetJS is bundled by Superset — available on window.XLSX or via import
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getXLSX(): Promise<any> {
-  if (typeof (window as any).XLSX !== 'undefined') return (window as any).XLSX;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (typeof (window as any).XLSX !== 'undefined')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (window as any).XLSX;
   return import('xlsx');
 }
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function cellAddr(row: number, col: number): string {
+  const colLetter = String.fromCharCode(65 + col); // A–Z
+  return `${colLetter}${row + 1}`;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function boldHeaderRow(ws: any, colCount: number): void {
+  for (let c = 0; c < colCount; c += 1) {
+    const addr = cellAddr(0, c);
+    if (ws[addr]) {
+      ws[addr].s = {
+        font: { bold: true },
+        fill: { fgColor: { rgb: 'E6F1FB' } },
+        alignment: { horizontal: 'left' },
+      };
+    }
+  }
+}
+
+function applyConfidenceConditional(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ws: any,
+  dataRows: unknown[][],
+  colIndex: number,
+): void {
+  dataRows.forEach((row, rowIdx) => {
+    const raw = row[colIndex] as string; // e.g. "87%"
+    const pct = parseInt(raw, 10);
+    const addr = cellAddr(rowIdx + 1, colIndex); // +1 for header
+    if (!ws[addr]) return;
+    const rgb =
+      pct >= 80
+        ? 'E1F5EE' // green tint
+        : pct >= 50
+          ? 'FAEEDA' // amber tint
+          : 'FCEBEB'; // red tint
+    ws[addr].s = { fill: { fgColor: { rgb } } };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Main export function
+// ---------------------------------------------------------------------------
 
 export async function exportResultsToExcel(
   result: CalibrationResult,
@@ -35,28 +92,29 @@ export async function exportResultsToExcel(
   const summaryRows = [
     ['AI Calibration Report'],
     [],
-    ['Run date',    new Date().toLocaleString()],
-    ['Source A',   sourceAName],
-    ['Source B',   sourceBName],
-    ...(sourceARows != null ? [['Source A rows', sourceARows.toLocaleString()]] : []),
-    ...(sourceBRows != null ? [['Source B rows', sourceBRows.toLocaleString()]] : []),
+    ['Run date', new Date().toLocaleString()],
+    ['Source A', sourceAName],
+    ['Source B', sourceBName],
+    ...(sourceARows != null
+      ? [['Source A rows', sourceARows.toLocaleString()]]
+      : []),
+    ...(sourceBRows != null
+      ? [['Source B rows', sourceBRows.toLocaleString()]]
+      : []),
     [],
-    ['Field matches found',  result.field_matches.length],
-    ['Anomalies detected',   result.anomalies.length],
-    ['Corrections suggested',result.corrections.length],
+    ['Field matches found', result.field_matches.length],
+    ['Anomalies detected', result.anomalies.length],
+    ['Corrections suggested', result.corrections.length],
     [],
     ['AI Explanation'],
     [result.explanation],
   ];
 
   const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
-
-  // Style column widths
   wsSummary['!cols'] = [{ wch: 28 }, { wch: 80 }];
 
-  // Bold the title cell
-  if (wsSummary['A1']) {
-    wsSummary['A1'].s = {
+  if (wsSummary.A1) {
+    wsSummary.A1.s = {
       font: { bold: true, sz: 14 },
       alignment: { horizontal: 'left' },
     };
@@ -83,10 +141,14 @@ export async function exportResultsToExcel(
 
   const wsMatches = XLSX.utils.aoa_to_sheet([matchHeaders, ...matchRows]);
   wsMatches['!cols'] = [
-    { wch: 28 }, { wch: 28 }, { wch: 14 }, { wch: 12 }, { wch: 60 },
+    { wch: 28 },
+    { wch: 28 },
+    { wch: 14 },
+    { wch: 12 },
+    { wch: 60 },
   ];
-  _boldHeaderRow(wsMatches, matchHeaders.length);
-  _applyConfidenceConditional(wsMatches, matchRows, 3); // col D = confidence
+  boldHeaderRow(wsMatches, matchHeaders.length);
+  applyConfidenceConditional(wsMatches, matchRows, 3);
   XLSX.utils.book_append_sheet(wb, wsMatches, 'Field Matches');
 
   // ── Sheet 3: Anomalies ────────────────────────────────────────────────────
@@ -102,9 +164,13 @@ export async function exportResultsToExcel(
 
   const wsAnomalies = XLSX.utils.aoa_to_sheet([anomalyHeaders, ...anomalyRows]);
   wsAnomalies['!cols'] = [
-    { wch: 12 }, { wch: 26 }, { wch: 55 }, { wch: 12 }, { wch: 24 },
+    { wch: 12 },
+    { wch: 26 },
+    { wch: 55 },
+    { wch: 12 },
+    { wch: 24 },
   ];
-  _boldHeaderRow(wsAnomalies, anomalyHeaders.length);
+  boldHeaderRow(wsAnomalies, anomalyHeaders.length);
   XLSX.utils.book_append_sheet(wb, wsAnomalies, 'Anomalies');
 
   // ── Sheet 4: Corrections ──────────────────────────────────────────────────
@@ -124,63 +190,23 @@ export async function exportResultsToExcel(
     `${Math.round(c.confidence * 100)}%`,
   ]);
 
-  const wsCorrections = XLSX.utils.aoa_to_sheet([correctionHeaders, ...correctionRows]);
+  const wsCorrections = XLSX.utils.aoa_to_sheet([
+    correctionHeaders,
+    ...correctionRows,
+  ]);
   wsCorrections['!cols'] = [
-    { wch: 28 }, { wch: 28 }, { wch: 20 }, { wch: 55 }, { wch: 12 },
+    { wch: 28 },
+    { wch: 28 },
+    { wch: 20 },
+    { wch: 55 },
+    { wch: 12 },
   ];
-  _boldHeaderRow(wsCorrections, correctionHeaders.length);
+  boldHeaderRow(wsCorrections, correctionHeaders.length);
   XLSX.utils.book_append_sheet(wb, wsCorrections, 'Corrections');
 
   // ── Write and trigger download ────────────────────────────────────────────
-  const timestamp = new Date()
-    .toISOString()
-    .replace(/[:.]/g, '-')
-    .slice(0, 19);
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const fileName = `calibration-report-${timestamp}.xlsx`;
 
   XLSX.writeFile(wb, fileName);
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function _boldHeaderRow(ws: any, colCount: number): void {
-  for (let c = 0; c < colCount; c++) {
-    const addr = _cellAddr(0, c);
-    if (ws[addr]) {
-      ws[addr].s = {
-        font: { bold: true },
-        fill: { fgColor: { rgb: 'E6F1FB' } },
-        alignment: { horizontal: 'left' },
-      };
-    }
-  }
-}
-
-// Light conditional colouring for confidence column (no full XLSX conditionals —
-// we bake the colour into the cell style directly based on value)
-function _applyConfidenceConditional(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ws: any,
-  dataRows: unknown[][],
-  colIndex: number,
-): void {
-  dataRows.forEach((row, rowIdx) => {
-    const raw = row[colIndex] as string; // e.g. "87%"
-    const pct = parseInt(raw, 10);
-    const addr = _cellAddr(rowIdx + 1, colIndex); // +1 for header
-    if (!ws[addr]) return;
-    const rgb =
-      pct >= 80 ? 'E1F5EE' :   // green tint
-      pct >= 50 ? 'FAEEDA' :   // amber tint
-                  'FCEBEB';    // red tint
-    ws[addr].s = { fill: { fgColor: { rgb } } };
-  });
-}
-
-function _cellAddr(row: number, col: number): string {
-  const colLetter = String.fromCharCode(65 + col); // A–Z (sufficient for our cols)
-  return `${colLetter}${row + 1}`;
 }

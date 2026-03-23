@@ -1,3 +1,21 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 import React, { useCallback, useRef, useState } from 'react';
 import { styled } from '@superset-ui/core';
 import type { ParsedFile, WorkbookMeta } from './types';
@@ -19,8 +37,8 @@ const DropZone = styled.div<{ dragging: boolean; hasFile: boolean }>`
       dragging
         ? theme.colors.primary.base
         : hasFile
-        ? theme.colors.success.base
-        : theme.colors.grayscale.light2};
+          ? theme.colors.success.base
+          : theme.colors.grayscale.light2};
   border-radius: ${({ theme }) => theme.gridUnit}px;
   cursor: pointer;
   display: flex;
@@ -28,7 +46,9 @@ const DropZone = styled.div<{ dragging: boolean; hasFile: boolean }>`
   gap: ${({ theme }) => theme.gridUnit}px;
   padding: ${({ theme }) => theme.gridUnit * 2}px;
   text-align: center;
-  transition: border-color 0.2s, background 0.2s;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
   background: ${({ dragging, theme }) =>
     dragging ? theme.colors.primary.light4 : 'transparent'};
   &:hover {
@@ -61,7 +81,9 @@ const ClearBtn = styled.button`
   cursor: pointer;
   font-size: 11px;
   padding: 0;
-  &:hover { text-decoration: underline; }
+  &:hover {
+    text-decoration: underline;
+  }
 `;
 
 const ProgressBar = styled.div<{ pct: number }>`
@@ -152,7 +174,9 @@ export function FileUploader({
       setError(null);
       const format = detectFormat(file);
       if (!format) {
-        setError('Unsupported file type. Please upload .xlsx, .xls, .xlsm, or .csv');
+        setError(
+          'Unsupported file type. Please upload .xlsx, .xls, .xlsm, or .csv',
+        );
         return;
       }
 
@@ -248,7 +272,10 @@ export function FileUploader({
         dragging={dragging}
         hasFile={!!parsed}
         onClick={() => !disabled && !parsing && inputRef.current?.click()}
-        onDragOver={e => { e.preventDefault(); setDragging(true); }}
+        onDragOver={e => {
+          e.preventDefault();
+          setDragging(true);
+        }}
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
       >
@@ -273,7 +300,11 @@ export function FileUploader({
               {parsed.column_stats.length} columns
             </FileMeta>
             <ClearBtn
-              onClick={e => { e.stopPropagation(); onClear(); setError(null); }}
+              onClick={e => {
+                e.stopPropagation();
+                onClear();
+                setError(null);
+              }}
             >
               Remove file
             </ClearBtn>
@@ -287,7 +318,9 @@ export function FileUploader({
           <DropLabel>
             Drop {label} here or click to browse
             <br />
-            <span style={{ fontSize: 10 }}>Excel (.xlsx, .xls) or CSV (.csv)</span>
+            <span style={{ fontSize: 10 }}>
+              Excel (.xlsx, .xls) or CSV (.csv)
+            </span>
           </DropLabel>
         )}
       </DropZone>
@@ -305,7 +338,10 @@ export function FileUploader({
           ))}
           <ClearBtn
             style={{ marginTop: 8 }}
-            onClick={() => { setWorkbookMeta(null); setParsing(false); }}
+            onClick={() => {
+              setWorkbookMeta(null);
+              setParsing(false);
+            }}
           >
             Cancel
           </ClearBtn>
