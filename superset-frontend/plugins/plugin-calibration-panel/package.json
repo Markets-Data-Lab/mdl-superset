@@ -1,35 +1,32 @@
 {
   "name": "@superset-ui/plugin-calibration-panel",
   "version": "0.1.0",
-  "description": "AI-powered dataset calibration sidebar panel",
-  "keywords": [
-    "superset",
-    "calibration",
-    "ai",
-    "data-matching"
+  "description": "Superset Plugin - Calibration Panel",
+  "sideEffects": [
+    "*.css"
   ],
-  "license": "Apache-2.0",
-  "main": "lib/index.js",
-  "module": "esm/index.js",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
   "files": [
-    "lib",
-    "esm",
     "src"
   ],
-  "scripts": {
-    "build": "tsc -p tsconfig.json && tsc -p tsconfig.json --module es6 --outDir esm",
-    "dev": "tsc -p tsconfig.json --watch",
-    "type-check": "tsc --noEmit"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/apache/superset.git",
+    "directory": "superset-frontend/plugins/plugin-calibration-panel"
+  },
+  "keywords": [
+    "superset"
+  ],
+  "author": "Superset",
+  "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
   },
   "peerDependencies": {
     "@superset-ui/core": "*",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2"
-  },
-  "devDependencies": {
-    "@superset-ui/core": "file:../../packages/superset-ui-core",
-    "@types/react": "^17.0.83",
-    "@types/react-dom": "^17.0.26",
-    "typescript": "5.4.5"
+    "@apache-superset/core": "*",
+    "@types/react": "*",
+    "react": "^17.0.2"
   }
 }
