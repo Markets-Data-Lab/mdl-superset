@@ -104,6 +104,9 @@ jest.mock('src/dashboard/containers/DashboardGrid', () => {
   MockDashboardGrid.displayName = 'MockDashboardGrid';
   return MockDashboardGrid;
 });
+jest.mock('@superset-ui/plugin-calibration-panel', () => ({
+  CalibrationPanel: () => <div data-test="mock-calibration-panel" />,
+}));
 
 // eslint-disable-next-line no-restricted-globals -- TODO: Migrate from describe blocks
 describe('DashboardBuilder', () => {
