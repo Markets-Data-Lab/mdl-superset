@@ -17,7 +17,12 @@
  * under the License.
  */
 
-import type { ColumnStats, ParsedFile, FileFormat, WorkbookMeta } from './types';
+import type {
+  ColumnStats,
+  ParsedFile,
+  FileFormat,
+  WorkbookMeta,
+} from './types';
 
 // SheetJS is available globally in the Superset bundle
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -152,10 +157,7 @@ function strategicSample(
   const middleCount = target - first.length - last.length;
   const middleStart = bucketSize;
   const middleEnd = rows.length - bucketSize;
-  const step = Math.max(
-    1,
-    Math.floor((middleEnd - middleStart) / middleCount),
-  );
+  const step = Math.max(1, Math.floor((middleEnd - middleStart) / middleCount));
   const middle: Record<string, unknown>[] = [];
   for (
     let i = middleStart;
@@ -207,9 +209,7 @@ function buildParsedFile(
 /**
  * Inspect an Excel file and return its sheet names without fully parsing.
  */
-export async function inspectExcelSheets(
-  file: File,
-): Promise<WorkbookMeta> {
+export async function inspectExcelSheets(file: File): Promise<WorkbookMeta> {
   const buffer = await file.arrayBuffer();
   const XLSXLib = await getXLSX();
   const wb = XLSXLib.read(buffer, { type: 'array', bookSheets: true });
@@ -227,8 +227,7 @@ export async function parseExcel(
   const XLSXLib = await getXLSX();
   const wb = XLSXLib.read(buffer, { type: 'array', dense: true });
   const ws = wb.Sheets[sheetName];
-  if (!ws)
-    throw new Error(`Sheet "${sheetName}" not found in ${file.name}`);
+  if (!ws) throw new Error(`Sheet "${sheetName}" not found in ${file.name}`);
   const rows: Record<string, unknown>[] = XLSXLib.utils.sheet_to_json(ws, {
     defval: null,
     raw: false,
