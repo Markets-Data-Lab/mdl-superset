@@ -5,9 +5,11 @@
   "sideEffects": [
     "*.css"
   ],
-  "main": "src/index.ts",
-  "module": "src/index.ts",
+  "main": "lib/index.js",
+  "module": "esm/index.js",
   "files": [
+    "esm",
+    "lib",
     "src"
   ],
   "repository": {
