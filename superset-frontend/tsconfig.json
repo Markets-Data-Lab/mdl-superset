@@ -57,6 +57,7 @@
       "@superset-ui/switchboard": ["./packages/superset-ui-switchboard/src"],
       "@apache-superset/core": ["./packages/superset-core/src"],
       "@apache-superset/core/*": ["./packages/superset-core/src/*"],
+      "@superset-ui/plugin-calibration-panel": ["./plugins/plugin-calibration-panel/src"],
       "@superset-ui/plugin-chart-*": ["./plugins/plugin-chart-*/src"],
       "@superset-ui/legacy-plugin-chart-*": ["./plugins/legacy-plugin-chart-*/src"],
       "@superset-ui/legacy-preset-chart-*": ["./plugins/legacy-preset-chart-*/src"],
