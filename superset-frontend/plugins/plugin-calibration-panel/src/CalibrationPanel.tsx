@@ -33,6 +33,8 @@ const PanelContainer = styled.div<{ dock: CalibrationPanelDock }>`
     min-width: 320px;
     background-color: ${theme.colorBgContainer};
     border-${dock === 'right' ? 'left' : 'right'}: 1px solid ${theme.colorBorderSecondary};
+    grid-column: 3;
+    grid-row: 1 / span 2;
     height: 100%;
     overflow-y: auto;
     padding: ${theme.sizeUnit * 4}px;

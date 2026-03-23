@@ -57,6 +57,7 @@ import {
 } from 'src/dashboard/util/constants';
 import FilterBar from 'src/dashboard/components/nativeFilters/FilterBar';
 import { useUiConfig } from 'src/components/UiConfigContext';
+import { CalibrationPanel } from '@superset-ui/plugin-calibration-panel';
 import ResizableSidebar from 'src/components/ResizableSidebar';
 import {
   BUILDER_SIDEPANEL_WIDTH,
@@ -703,6 +704,9 @@ const DashboardBuilder = () => {
           </StyledDashboardContent>
         </DashboardContentWrapper>
       </StyledContent>
+      {!editMode && (
+        <CalibrationPanel defaultDock="right" />
+      )}
       {dashboardIsSaving && (
         <Loading
           css={css`
