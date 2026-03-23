@@ -1,0 +1,32 @@
+{
+  "name": "@superset-ui/plugin-calibration-panel",
+  "version": "0.1.0",
+  "description": "Superset Plugin - Calibration Panel",
+  "sideEffects": [
+    "*.css"
+  ],
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "files": [
+    "src"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/apache/superset.git",
+    "directory": "superset-frontend/plugins/plugin-calibration-panel"
+  },
+  "keywords": [
+    "superset"
+  ],
+  "author": "Superset",
+  "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@superset-ui/core": "*",
+    "@apache-superset/core": "*",
+    "@types/react": "*",
+    "react": "^17.0.2"
+  }
+}
