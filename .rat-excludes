@@ -89,3 +89,7 @@ GPT.md
 
 # deployment config (fork-specific, not upstream Apache Superset)
 deployment/*
+
+# infrastructure and lambda (fork-specific)
+infra/*
+lambda/*
