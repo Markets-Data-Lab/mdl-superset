@@ -2,15 +2,12 @@
   "name": "@superset-ui/plugin-calibration-panel",
   "version": "0.1.0",
   "description": "Superset Plugin - Calibration Panel",
-  "sideEffects": [
-    "*.css"
-  ],
+  "sideEffects": false,
   "main": "lib/index.js",
   "module": "esm/index.js",
   "files": [
     "esm",
-    "lib",
-    "src"
+    "lib"
   ],
   "repository": {
     "type": "git",
