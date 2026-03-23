@@ -3,15 +3,16 @@ Unit tests for the calibration Lambda handler.
 Run with: pytest lambda/calibration/tests/
 """
 
-import json
-import pytest
+import json  # noqa: TID251
+import os
+import sys
 from unittest.mock import MagicMock, patch
 
-import sys, os
+import pytest
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-import handler
-
+import handler  # noqa: E402
 
 DATASET_A = {
     "name": "sales_2023",
@@ -22,7 +23,12 @@ DATASET_A = {
         {"name": "sale_date", "type": "DATE"},
     ],
     "sample_rows": [
-        {"sale_id": 1, "customer_id": 101, "revenue_usd": 250.0, "sale_date": "2023-01-15"},
+        {
+            "sale_id": 1,
+            "customer_id": 101,
+            "revenue_usd": 250.0,
+            "sale_date": "2023-01-15",
+        },
     ],
 }
 
@@ -35,7 +41,12 @@ DATASET_B = {
         {"name": "order_dt", "type": "TIMESTAMP"},
     ],
     "sample_rows": [
-        {"order_id": 1, "cust_id": 101, "amount": 250.0, "order_dt": "2023-01-15T00:00:00"},
+        {
+            "order_id": 1,
+            "cust_id": 101,
+            "amount": 250.0,
+            "order_dt": "2023-01-15T00:00:00",
+        },
     ],
 }
 
@@ -46,14 +57,18 @@ MOCK_AI_RESPONSE = {
             "field_b": "order_id",
             "confidence": 0.95,
             "match_type": "semantic",
-            "reasoning": "Both are primary identifier fields of the same integer type.",
+            "reasoning": (
+                "Both are primary identifier fields of the same integer type."
+            ),
         }
     ],
     "anomalies": [
         {
             "dataset": "B",
             "field": "order_dt",
-            "issue": "Timestamp includes time component while Dataset A uses plain DATE.",
+            "issue": (
+                "Timestamp includes time component while Dataset A uses plain DATE."
+            ),
             "severity": "low",
             "affected_estimate": "100% of rows",
         }
@@ -63,15 +78,20 @@ MOCK_AI_RESPONSE = {
             "field_a": "revenue_usd",
             "field_b": "amount",
             "correction_type": "unit_conversion",
-            "formula": "revenue_usd = amount (no conversion needed; both in USD)",
+            "formula": ("revenue_usd = amount (no conversion needed; both in USD)"),
             "confidence": 0.9,
         }
     ],
-    "explanation": "The two datasets appear to represent the same transactions from different systems. Field names differ but semantics align closely. The main discrepancy is the timestamp precision in Dataset B.",
+    "explanation": (
+        "The two datasets appear to represent the same"
+        " transactions from different systems. Field names"
+        " differ but semantics align closely. The main"
+        " discrepancy is the timestamp precision in Dataset B."
+    ),
 }
 
 
-def _make_event(body: dict, method: str = "POST") -> dict:
+def _make_event(body: dict[str, object], method: str = "POST") -> dict[str, str]:
     return {"httpMethod": method, "body": json.dumps(body)}
 
 
@@ -79,7 +99,8 @@ def _make_event(body: dict, method: str = "POST") -> dict:
 # CORS preflight
 # ---------------------------------------------------------------------------
 
-def test_options_returns_200():
+
+def test_options_returns_200() -> None:
     event = {"httpMethod": "OPTIONS"}
     resp = handler.lambda_handler(event, None)
     assert resp["statusCode"] == 200
@@ -89,20 +110,21 @@ def test_options_returns_200():
 # Validation
 # ---------------------------------------------------------------------------
 
-def test_missing_dataset_a_returns_400():
+
+def test_missing_dataset_a_returns_400() -> None:
     event = _make_event({"dataset_b": DATASET_B})
     resp = handler.lambda_handler(event, None)
     assert resp["statusCode"] == 400
     assert "dataset_a" in json.loads(resp["body"])["error"]
 
 
-def test_missing_columns_returns_400():
+def test_missing_columns_returns_400() -> None:
     event = _make_event({"dataset_a": {"name": "x"}, "dataset_b": DATASET_B})
     resp = handler.lambda_handler(event, None)
     assert resp["statusCode"] == 400
 
 
-def test_invalid_json_returns_400():
+def test_invalid_json_returns_400() -> None:
     event = {"httpMethod": "POST", "body": "not-json"}
     resp = handler.lambda_handler(event, None)
     assert resp["statusCode"] == 400
@@ -112,9 +134,12 @@ def test_invalid_json_returns_400():
 # Happy path
 # ---------------------------------------------------------------------------
 
+
 @patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key"})
 @patch("handler.anthropic.Anthropic")
-def test_successful_calibration(mock_anthropic_cls):
+def test_successful_calibration(
+    mock_anthropic_cls: MagicMock,
+) -> None:
     mock_client = MagicMock()
     mock_anthropic_cls.return_value = mock_client
 
@@ -138,7 +163,8 @@ def test_successful_calibration(mock_anthropic_cls):
 # Prompt builder smoke test
 # ---------------------------------------------------------------------------
 
-def test_build_prompt_contains_dataset_names():
+
+def test_build_prompt_contains_dataset_names() -> None:
     prompt = handler._build_prompt(DATASET_A, DATASET_B)
     assert "sales_2023" in prompt
     assert "orders_2023" in prompt
@@ -149,18 +175,22 @@ def test_build_prompt_contains_dataset_names():
 # Response parser
 # ---------------------------------------------------------------------------
 
-def test_parse_strips_markdown_fences():
+
+def test_parse_strips_markdown_fences() -> None:
     raw = "```json\n" + json.dumps(MOCK_AI_RESPONSE) + "\n```"
     result = handler._parse_response(raw)
     assert result["explanation"] == MOCK_AI_RESPONSE["explanation"]
 
 
-def test_parse_raises_on_non_json():
+def test_parse_raises_on_non_json() -> None:
     with pytest.raises(ValueError, match="non-JSON"):
         handler._parse_response("Sorry, I cannot help with that.")
 
 
-def test_parse_raises_on_missing_keys():
-    bad = {"field_matches": [], "anomalies": []}
+def test_parse_raises_on_missing_keys() -> None:
+    bad: dict[str, list[object]] = {
+        "field_matches": [],
+        "anomalies": [],
+    }
     with pytest.raises(ValueError, match="missing required keys"):
         handler._parse_response(json.dumps(bad))

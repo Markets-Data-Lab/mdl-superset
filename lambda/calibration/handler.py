@@ -10,17 +10,19 @@ Environment variables required:
                         and inject via Lambda environment variable)
 """
 
-import json
+import json  # noqa: TID251
 import os
 import re
-import anthropic
+from typing import Any
 
+import anthropic
 
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
-def lambda_handler(event: dict, context) -> dict:
+
+def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     # CORS preflight
     if event.get("httpMethod") == "OPTIONS":
         return _response(200, {})
@@ -35,7 +37,10 @@ def lambda_handler(event: dict, context) -> dict:
 
     for ds, label in [(dataset_a, "dataset_a"), (dataset_b, "dataset_b")]:
         if not ds or not ds.get("name") or not ds.get("columns"):
-            return _response(400, {"error": f"{label} must include 'name' and 'columns'"})
+            return _response(
+                400,
+                {"error": f"{label} must include 'name' and 'columns'"},
+            )
 
     try:
         result = _run_calibration(dataset_a, dataset_b)
@@ -52,37 +57,49 @@ def lambda_handler(event: dict, context) -> dict:
 # Core calibration logic
 # ---------------------------------------------------------------------------
 
-def _run_calibration(dataset_a: dict, dataset_b: dict) -> dict:
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise RuntimeError("ANTHROPIC_API_KEY environment variable not set")
 
-    client = anthropic.Anthropic(api_key=api_key)
+def _run_calibration(
+    dataset_a: dict[str, Any], dataset_b: dict[str, Any]
+) -> dict[str, Any]:
+    if api_key := os.environ.get("ANTHROPIC_API_KEY"):
+        client = anthropic.Anthropic(api_key=api_key)
+    else:
+        raise RuntimeError("ANTHROPIC_API_KEY environment variable not set")
 
     message = client.messages.create(
         model="claude-sonnet-4-20250514",
         max_tokens=4096,
         system=(
-            "You are a senior data engineer specialising in dataset calibration "
-            "and record linkage. Return only valid JSON — no preamble, no markdown "
-            "fences, no trailing commentary."
+            "You are a senior data engineer specialising in dataset"
+            " calibration and record linkage. Return only valid JSON"
+            " — no preamble, no markdown fences, no trailing"
+            " commentary."
         ),
-        messages=[{"role": "user", "content": _build_prompt(dataset_a, dataset_b)}],
+        messages=[
+            {
+                "role": "user",
+                "content": _build_prompt(dataset_a, dataset_b),
+            }
+        ],
     )
 
     raw = message.content[0].text.strip()
     return _parse_response(raw)
 
 
-def _build_prompt(dataset_a: dict, dataset_b: dict) -> str:
-    def fmt(ds: dict) -> str:
+def _build_prompt(dataset_a: dict[str, Any], dataset_b: dict[str, Any]) -> str:
+    def fmt(ds: dict[str, Any]) -> str:
         source = ds.get("source", "snowflake")
         total = ds.get("total_rows")
         total_str = f" ({total:,} total rows, sample shown)" if total else ""
         header = f"Name: {ds['name']}\nSource: {source}{total_str}"
         cols = json.dumps(ds["columns"], indent=2)
         rows = json.dumps(ds.get("sample_rows", [])[:20], indent=2)
-        return f"{header}\nColumns (with stats where available):\n{cols}\nSample rows:\n{rows}"
+        return (
+            f"{header}\n"
+            f"Columns (with stats where available):\n{cols}\n"
+            f"Sample rows:\n{rows}"
+        )
 
     return f"""Analyze these two data sources for calibration and record linkage.
 Sources may be Snowflake datasets, Excel files (.xlsx), or CSV files.
@@ -97,39 +114,39 @@ Column metadata may include null_pct, unique_estimate, min, max, and sample_valu
 
 Return a single JSON object with EXACTLY this structure — no other text:
 
-{{
+{{{{
   "field_matches": [
-    {{
+    {{{{
       "field_a": "<column from Source A>",
       "field_b": "<column from Source B>",
       "confidence": <float 0.0-1.0>,
       "match_type": "<exact | semantic | partial | derived>",
       "reasoning": "<one sentence>"
-    }}
+    }}}}
   ],
   "anomalies": [
-    {{
+    {{{{
       "dataset": "<A | B>",
       "field": "<column name>",
       "issue": "<concise description of the anomaly>",
       "severity": "<low | medium | high>",
       "affected_estimate": "<e.g. ~15% of rows or all null values>"
-    }}
+    }}}}
   ],
   "corrections": [
-    {{
+    {{{{
       "field_a": "<column from A>",
       "field_b": "<column from B>",
       "correction_type": "<scale | offset | transform | mapping | unit_conversion>",
       "formula": "<human-readable formula or mapping description>",
       "confidence": <float 0.0-1.0>
-    }}
+    }}}}
   ],
-  "explanation": "<2-4 sentence plain-English summary: key findings, main discrepancies, recommended next steps>"
-}}"""
+  "explanation": "<2-4 sentence plain-English summary>"
+}}}}"""
 
 
-def _parse_response(raw: str) -> dict:
+def _parse_response(raw: str) -> dict[str, Any]:
     # Strip any accidental markdown fences
     cleaned = re.sub(r"^```(?:json)?\s*", "", raw, flags=re.MULTILINE)
     cleaned = re.sub(r"\s*```$", "", cleaned, flags=re.MULTILINE).strip()
@@ -141,9 +158,13 @@ def _parse_response(raw: str) -> dict:
             f"AI returned non-JSON content: {exc}\nFirst 300 chars: {raw[:300]}"
         ) from exc
 
-    required = {"field_matches", "anomalies", "corrections", "explanation"}
-    missing = required - set(parsed.keys())
-    if missing:
+    required = {
+        "field_matches",
+        "anomalies",
+        "corrections",
+        "explanation",
+    }
+    if missing := required - set(parsed.keys()):
         raise ValueError(f"AI response missing required keys: {missing}")
 
     return parsed
@@ -153,13 +174,14 @@ def _parse_response(raw: str) -> dict:
 # HTTP response helper
 # ---------------------------------------------------------------------------
 
-def _response(status: int, body: dict) -> dict:
+
+def _response(status: int, body: dict[str, Any]) -> dict[str, Any]:
     return {
         "statusCode": status,
         "headers": {
             "Content-Type": "application/json",
             "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Headers": "Content-Type,Authorization",
+            "Access-Control-Allow-Headers": ("Content-Type,Authorization"),
             "Access-Control-Allow-Methods": "POST,OPTIONS",
         },
         "body": json.dumps(body),
