@@ -35,6 +35,11 @@ import {
 } from './api';
 import { FileUploader } from './FileUploader';
 import { DatasetPicker } from './DatasetPicker';
+import {
+  ComparisonPreview,
+  buildSummaryFromFile,
+  type SourceSummary,
+} from './ComparisonPreview';
 import { ResultsTabs } from './ResultsTabs';
 import { exportResultsToExcel } from './exportToExcel';
 
@@ -253,6 +258,14 @@ const CalibrationPanel = ({ defaultDock = 'right' }: CalibrationPanelProps) => {
     : datasetIdB !== null;
   const canRun = sourceAReady && sourceBReady && loadingState !== 'running';
 
+  // Build preview summaries from selected sources
+  const previewA: SourceSummary | null = fileA
+    ? buildSummaryFromFile(fileA)
+    : null;
+  const previewB: SourceSummary | null = fileB
+    ? buildSummaryFromFile(fileB)
+    : null;
+
   const resetResults = useCallback(() => {
     setResult(null);
     setError(null);
@@ -410,6 +423,11 @@ const CalibrationPanel = ({ defaultDock = 'right' }: CalibrationPanelProps) => {
             />
           )}
         </Section>
+
+        {/* Comparison preview */}
+        {(previewA || previewB) && (
+          <ComparisonPreview sourceA={previewA} sourceB={previewB} />
+        )}
 
         {/* Run button */}
         <RunButton
