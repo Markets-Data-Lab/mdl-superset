@@ -128,7 +128,7 @@ const RunButton = styled.button<{ disabled: boolean }>`
     border: none;
     border-radius: ${theme.sizeUnit}px;
     background: ${disabled ? theme.colorBgTextHover : theme.colorPrimary};
-    color: #fff;
+    color: ${theme.colorTextLightSolid};
     font-size: ${theme.fontSize}px;
     font-weight: ${theme.fontWeightStrong};
     cursor: ${disabled ? 'not-allowed' : 'pointer'};
