@@ -17,7 +17,7 @@
  * under the License.
  */
 import { useState } from 'react';
-import { css, styled } from '@apache-superset/core/ui';
+import { css, styled, useTheme } from '@apache-superset/core/ui';
 import type {
   ActiveTab,
   CalibrationResult,
@@ -91,15 +91,15 @@ const CardMeta = styled.div`
   `}
 `;
 
-const Badge = styled.span<{ color: string }>`
-  ${({ color }) => css`
+const Badge = styled.span<{ bg: string; fg: string }>`
+  ${({ bg, fg }) => css`
     display: inline-block;
     padding: 1px 6px;
     border-radius: 3px;
     font-size: 10px;
     font-weight: 600;
-    background: ${color};
-    color: #fff;
+    background: ${bg};
+    color: ${fg};
   `}
 `;
 
@@ -123,23 +123,39 @@ const EmptyState = styled.div`
 // Helpers
 // ---------------------------------------------------------------------------
 
-function confidenceColor(confidence: number): string {
-  if (confidence >= 0.8) return '#52c41a';
-  if (confidence >= 0.5) return '#faad14';
-  return '#ff4d4f';
+interface ThemeColors {
+  success: string;
+  warning: string;
+  error: string;
+  textLightSolid: string;
 }
 
-function severityColor(severity: 'low' | 'medium' | 'high'): string {
-  if (severity === 'high') return '#ff4d4f';
-  if (severity === 'medium') return '#faad14';
-  return '#52c41a';
+function confidenceColor(confidence: number, colors: ThemeColors): string {
+  if (confidence >= 0.8) return colors.success;
+  if (confidence >= 0.5) return colors.warning;
+  return colors.error;
+}
+
+function severityColor(
+  severity: 'low' | 'medium' | 'high',
+  colors: ThemeColors,
+): string {
+  if (severity === 'high') return colors.error;
+  if (severity === 'medium') return colors.warning;
+  return colors.success;
 }
 
 // ---------------------------------------------------------------------------
 // Sub-views
 // ---------------------------------------------------------------------------
 
-function MatchesTab({ matches }: { matches: FieldMatch[] }) {
+function MatchesTab({
+  matches,
+  colors,
+}: {
+  matches: FieldMatch[];
+  colors: ThemeColors;
+}) {
   if (!matches.length) return <EmptyState>No field matches found</EmptyState>;
   return (
     <>
@@ -149,7 +165,10 @@ function MatchesTab({ matches }: { matches: FieldMatch[] }) {
             {m.field_a} &harr; {m.field_b}
           </CardTitle>
           <CardMeta>
-            <Badge color={confidenceColor(m.confidence)}>
+            <Badge
+              bg={confidenceColor(m.confidence, colors)}
+              fg={colors.textLightSolid}
+            >
               {Math.round(m.confidence * 100)}%
             </Badge>{' '}
             {m.match_type}
@@ -161,7 +180,13 @@ function MatchesTab({ matches }: { matches: FieldMatch[] }) {
   );
 }
 
-function AnomaliesTab({ anomalies }: { anomalies: Anomaly[] }) {
+function AnomaliesTab({
+  anomalies,
+  colors,
+}: {
+  anomalies: Anomaly[];
+  colors: ThemeColors;
+}) {
   if (!anomalies.length) return <EmptyState>No anomalies detected</EmptyState>;
   return (
     <>
@@ -171,8 +196,13 @@ function AnomaliesTab({ anomalies }: { anomalies: Anomaly[] }) {
             Dataset {a.dataset}: {a.field}
           </CardTitle>
           <CardMeta>
-            <Badge color={severityColor(a.severity)}>{a.severity}</Badge> ~
-            {a.affected_estimate} affected
+            <Badge
+              bg={severityColor(a.severity, colors)}
+              fg={colors.textLightSolid}
+            >
+              {a.severity}
+            </Badge>{' '}
+            ~{a.affected_estimate} affected
           </CardMeta>
           <div>{a.issue}</div>
         </Card>
@@ -181,7 +211,13 @@ function AnomaliesTab({ anomalies }: { anomalies: Anomaly[] }) {
   );
 }
 
-function CorrectionsTab({ corrections }: { corrections: Correction[] }) {
+function CorrectionsTab({
+  corrections,
+  colors,
+}: {
+  corrections: Correction[];
+  colors: ThemeColors;
+}) {
   if (!corrections.length)
     return <EmptyState>No corrections suggested</EmptyState>;
   return (
@@ -192,7 +228,10 @@ function CorrectionsTab({ corrections }: { corrections: Correction[] }) {
             {c.field_a} &rarr; {c.field_b}
           </CardTitle>
           <CardMeta>
-            <Badge color={confidenceColor(c.confidence)}>
+            <Badge
+              bg={confidenceColor(c.confidence, colors)}
+              fg={colors.textLightSolid}
+            >
               {Math.round(c.confidence * 100)}%
             </Badge>{' '}
             {c.correction_type}
@@ -223,6 +262,13 @@ const TABS: { key: ActiveTab; label: string }[] = [
 
 export function ResultsTabs({ result }: ResultsTabsProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>('matches');
+  const theme = useTheme();
+  const colors: ThemeColors = {
+    success: theme.colorSuccess,
+    warning: theme.colorWarning,
+    error: theme.colorError,
+    textLightSolid: theme.colorTextLightSolid,
+  };
 
   return (
     <>
@@ -242,13 +288,13 @@ export function ResultsTabs({ result }: ResultsTabsProps) {
       </TabBar>
       <TabContent>
         {activeTab === 'matches' && (
-          <MatchesTab matches={result.field_matches} />
+          <MatchesTab matches={result.field_matches} colors={colors} />
         )}
         {activeTab === 'anomalies' && (
-          <AnomaliesTab anomalies={result.anomalies} />
+          <AnomaliesTab anomalies={result.anomalies} colors={colors} />
         )}
         {activeTab === 'corrections' && (
-          <CorrectionsTab corrections={result.corrections} />
+          <CorrectionsTab corrections={result.corrections} colors={colors} />
         )}
         {activeTab === 'explanation' && (
           <ExplanationText>{result.explanation}</ExplanationText>

@@ -17,7 +17,7 @@
  * under the License.
  */
 import React, { useCallback, useRef, useState } from 'react';
-import { styled } from '@superset-ui/core';
+import { css, styled } from '@apache-superset/core/ui';
 import type { ParsedFile, WorkbookMeta } from './types';
 import {
   detectFormat,
@@ -31,115 +31,133 @@ import {
 // ---------------------------------------------------------------------------
 
 const DropZone = styled.div<{ dragging: boolean; hasFile: boolean }>`
-  align-items: center;
-  border: 2px dashed
-    ${({ dragging, hasFile, theme }) =>
-      dragging
-        ? theme.colors.primary.base
+  ${({ dragging, hasFile, theme }) => css`
+    align-items: center;
+    border: 2px dashed
+      ${dragging
+        ? theme.colorPrimary
         : hasFile
-          ? theme.colors.success.base
-          : theme.colors.grayscale.light2};
-  border-radius: ${({ theme }) => theme.gridUnit}px;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: ${({ theme }) => theme.gridUnit}px;
-  padding: ${({ theme }) => theme.gridUnit * 2}px;
-  text-align: center;
-  transition:
-    border-color 0.2s,
-    background 0.2s;
-  background: ${({ dragging, theme }) =>
-    dragging ? theme.colors.primary.light4 : 'transparent'};
-  &:hover {
-    border-color: ${({ theme }) => theme.colors.primary.base};
-    background: ${({ theme }) => theme.colors.primary.light4};
-  }
+          ? theme.colorSuccess
+          : theme.colorBorderSecondary};
+    border-radius: ${theme.sizeUnit}px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: ${theme.sizeUnit}px;
+    padding: ${theme.sizeUnit * 2}px;
+    text-align: center;
+    transition:
+      border-color 0.2s,
+      background 0.2s;
+    background: ${dragging ? theme.colorPrimaryBg : 'transparent'};
+    &:hover {
+      border-color: ${theme.colorPrimary};
+      background: ${theme.colorPrimaryBg};
+    }
+  `}
 `;
 
 const DropLabel = styled.span`
-  color: ${({ theme }) => theme.colors.grayscale.base};
-  font-size: ${({ theme }) => theme.typography.sizes.s}px;
+  ${({ theme }) => css`
+    color: ${theme.colorTextSecondary};
+    font-size: ${theme.fontSizeSM}px;
+  `}
 `;
 
 const FileName = styled.span`
-  color: ${({ theme }) => theme.colors.success.dark1};
-  font-size: ${({ theme }) => theme.typography.sizes.s}px;
-  font-weight: ${({ theme }) => theme.typography.weights.bold};
-  word-break: break-all;
+  ${({ theme }) => css`
+    color: ${theme.colorSuccess};
+    font-size: ${theme.fontSizeSM}px;
+    font-weight: ${theme.fontWeightStrong};
+    word-break: break-all;
+  `}
 `;
 
 const FileMeta = styled.span`
-  color: ${({ theme }) => theme.colors.grayscale.base};
-  font-size: 11px;
+  ${({ theme }) => css`
+    color: ${theme.colorTextSecondary};
+    font-size: ${theme.fontSizeSM}px;
+  `}
 `;
 
 const ClearBtn = styled.button`
-  background: transparent;
-  border: none;
-  color: ${({ theme }) => theme.colors.error.base};
-  cursor: pointer;
-  font-size: 11px;
-  padding: 0;
-  &:hover {
-    text-decoration: underline;
-  }
+  ${({ theme }) => css`
+    background: transparent;
+    border: none;
+    color: ${theme.colorError};
+    cursor: pointer;
+    font-size: ${theme.fontSizeSM}px;
+    padding: 0;
+    &:hover {
+      text-decoration: underline;
+    }
+  `}
 `;
 
 const ProgressBar = styled.div<{ pct: number }>`
-  background: ${({ theme }) => theme.colors.grayscale.light3};
-  border-radius: 2px;
-  height: 4px;
-  overflow: hidden;
-  width: 100%;
-  &::after {
-    content: '';
-    display: block;
-    height: 100%;
-    width: ${({ pct }) => pct}%;
-    background: ${({ theme }) => theme.colors.primary.base};
-    transition: width 0.3s ease;
-  }
+  ${({ pct, theme }) => css`
+    background: ${theme.colorBgTextHover};
+    border-radius: 2px;
+    height: 4px;
+    overflow: hidden;
+    width: 100%;
+    &::after {
+      content: '';
+      display: block;
+      height: 100%;
+      width: ${pct}%;
+      background: ${theme.colorPrimary};
+      transition: width 0.3s ease;
+    }
+  `}
 `;
 
 const ErrorMsg = styled.span`
-  color: ${({ theme }) => theme.colors.error.base};
-  font-size: 11px;
+  ${({ theme }) => css`
+    color: ${theme.colorError};
+    font-size: ${theme.fontSizeSM}px;
+  `}
 `;
 
 const SheetPickerOverlay = styled.div`
-  background: ${({ theme }) => theme.colors.grayscale.light5};
-  border: 1px solid ${({ theme }) => theme.colors.grayscale.light2};
-  border-radius: ${({ theme }) => theme.gridUnit}px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  padding: ${({ theme }) => theme.gridUnit * 2}px;
-  position: absolute;
-  width: 220px;
-  z-index: 100;
+  ${({ theme }) => css`
+    background: ${theme.colorBgContainer};
+    border: 1px solid ${theme.colorBorderSecondary};
+    border-radius: ${theme.sizeUnit}px;
+    box-shadow: ${theme.boxShadowSecondary};
+    padding: ${theme.sizeUnit * 2}px;
+    position: absolute;
+    width: 220px;
+    z-index: 100;
+  `}
 `;
 
 const SheetOption = styled.button`
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  color: ${({ theme }) => theme.colors.grayscale.dark2};
-  cursor: pointer;
-  display: block;
-  font-size: ${({ theme }) => theme.typography.sizes.s}px;
-  padding: ${({ theme }) => `${theme.gridUnit}px ${theme.gridUnit * 2}px`};
-  text-align: left;
-  width: 100%;
-  &:hover {
-    background: ${({ theme }) => theme.colors.primary.light4};
-    color: ${({ theme }) => theme.colors.primary.base};
-  }
+  ${({ theme }) => css`
+    background: transparent;
+    border: none;
+    border-radius: ${theme.sizeUnit}px;
+    color: ${theme.colorText};
+    cursor: pointer;
+    display: block;
+    font-size: ${theme.fontSizeSM}px;
+    padding: ${theme.sizeUnit}px ${theme.sizeUnit * 2}px;
+    text-align: left;
+    width: 100%;
+    &:hover {
+      background: ${theme.colorPrimaryBg};
+      color: ${theme.colorPrimary};
+    }
+  `}
 `;
 
 const SheetPickerLabel = styled.div`
-  color: ${({ theme }) => theme.colors.grayscale.dark1};
-  font-size: ${({ theme }) => theme.typography.sizes.s}px;
-  font-weight: ${({ theme }) => theme.typography.weights.bold};
-  margin-bottom: ${({ theme }) => theme.gridUnit}px;
+  ${({ theme }) => css`
+    color: ${theme.colorTextSecondary};
+    font-size: ${theme.fontSizeSM}px;
+    font-weight: ${theme.fontWeightStrong};
+    margin-bottom: ${theme.sizeUnit}px;
+  `}
 `;
 
 // ---------------------------------------------------------------------------
