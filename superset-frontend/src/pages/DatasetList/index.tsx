@@ -67,6 +67,10 @@ import {
   CONFIRM_OVERWRITE_MESSAGE,
 } from 'src/features/datasets/constants';
 import DuplicateDatasetModal from 'src/features/datasets/DuplicateDatasetModal';
+import {
+  CalibrationModal,
+  type CalibrationModalDataset,
+} from '@superset-ui/plugin-calibration-panel';
 import { useSelector } from 'react-redux';
 import { QueryObjectColumns } from 'src/views/CRUD/types';
 import { WIDER_DROPDOWN_WIDTH } from 'src/components/ListView/utils';
@@ -177,6 +181,9 @@ const DatasetList: FunctionComponent<DatasetListProps> = ({
 
   const [datasetCurrentlyDuplicating, setDatasetCurrentlyDuplicating] =
     useState<VirtualDataset | null>(null);
+
+  const [datasetCurrentlyComparing, setDatasetCurrentlyComparing] =
+    useState<CalibrationModalDataset | null>(null);
 
   const [importingDataset, showImportModal] = useState<boolean>(false);
   const [passwordFields, setPasswordFields] = useState<string[]>([]);
@@ -427,6 +434,11 @@ const DatasetList: FunctionComponent<DatasetListProps> = ({
           const handleDelete = () => openDatasetDeleteModal(original);
           const handleExport = () => handleBulkDatasetExport([original]);
           const handleDuplicate = () => openDatasetDuplicateModal(original);
+          const handleCompare = () =>
+            setDatasetCurrentlyComparing({
+              id: original.id,
+              table_name: original.table_name,
+            });
           if (!canEdit && !canDelete && !canExport && !canDuplicate) {
             return null;
           }
@@ -502,6 +514,21 @@ const DatasetList: FunctionComponent<DatasetListProps> = ({
                   </span>
                 </Tooltip>
               )}
+              <Tooltip
+                id="compare-action-tooltip"
+                title={t('Compare / Calibrate')}
+                placement="bottom"
+              >
+                <span
+                  role="button"
+                  tabIndex={0}
+                  className="action-button"
+                  onClick={handleCompare}
+                  data-test="dataset-compare-btn"
+                >
+                  <Icons.ConsoleSqlOutlined iconSize="l" />
+                </span>
+              </Tooltip>
             </Actions>
           );
         },
@@ -882,6 +909,12 @@ const DatasetList: FunctionComponent<DatasetListProps> = ({
         onHide={closeDatasetDuplicateModal}
         onDuplicate={handleDatasetDuplicate}
       />
+      {datasetCurrentlyComparing && (
+        <CalibrationModal
+          dataset={datasetCurrentlyComparing}
+          onClose={() => setDatasetCurrentlyComparing(null)}
+        />
+      )}
       <ConfirmStatusChange
         title={t('Please confirm')}
         description={t(
