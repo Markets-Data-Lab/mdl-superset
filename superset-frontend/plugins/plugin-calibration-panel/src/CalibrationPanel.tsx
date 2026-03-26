@@ -134,7 +134,9 @@ const RunButton = styled.button<{ disabled: boolean }>`
     cursor: ${disabled ? 'not-allowed' : 'pointer'};
     transition: background 0.2s;
     &:hover {
-      background: ${disabled ? theme.colorBgTextHover : theme.colorPrimaryHover};
+      background: ${disabled
+        ? theme.colorBgTextHover
+        : theme.colorPrimaryHover};
     }
   `}
 `;
@@ -249,8 +251,7 @@ const CalibrationPanel = ({ defaultDock = 'right' }: CalibrationPanelProps) => {
   const sourceBReady = sourceNeedsFile(mode, 'B')
     ? fileB !== null
     : datasetIdB !== null;
-  const canRun =
-    sourceAReady && sourceBReady && loadingState !== 'running';
+  const canRun = sourceAReady && sourceBReady && loadingState !== 'running';
 
   const resetResults = useCallback(() => {
     setResult(null);
@@ -326,9 +327,7 @@ const CalibrationPanel = ({ defaultDock = 'right' }: CalibrationPanelProps) => {
     try {
       await exportResultsToExcel(result, sourceAName, sourceBName);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Export failed',
-      );
+      setError(err instanceof Error ? err.message : 'Export failed');
     }
   }, [result, sourceAName, sourceBName]);
 
@@ -422,9 +421,7 @@ const CalibrationPanel = ({ defaultDock = 'right' }: CalibrationPanelProps) => {
         </RunButton>
 
         {/* Loading / error */}
-        {isRunning && (
-          <StatusText>{LOADING_MESSAGES[loadingState]}</StatusText>
-        )}
+        {isRunning && <StatusText>{LOADING_MESSAGES[loadingState]}</StatusText>}
         {error && <ErrorBanner>{error}</ErrorBanner>}
 
         {/* Results */}
@@ -432,9 +429,7 @@ const CalibrationPanel = ({ defaultDock = 'right' }: CalibrationPanelProps) => {
           <>
             <Divider />
             <ResultsTabs result={result} />
-            <ExportButton onClick={handleExport}>
-              Export to Excel
-            </ExportButton>
+            <ExportButton onClick={handleExport}>Export to Excel</ExportButton>
           </>
         )}
       </PanelBody>
