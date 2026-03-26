@@ -1294,6 +1294,9 @@ QUERY_LOGGER = None
 # Set this API key to enable Mapbox visualizations
 MAPBOX_API_KEY = os.environ.get("MAPBOX_API_KEY", "")
 
+# Anthropic API key for AI-powered dataset calibration
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+
 # Maximum number of rows returned for any analytical database query
 SQL_MAX_ROW = 100000
 

@@ -155,6 +155,7 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         from superset.async_events.api import AsyncEventsRestApi
         from superset.available_domains.api import AvailableDomainsRestApi
         from superset.cachekeys.api import CacheRestApi
+        from superset.calibration.api import CalibrationRestApi
         from superset.charts.api import ChartRestApi
         from superset.charts.data.api import ChartDataRestApi
         from superset.css_templates.api import CssTemplateRestApi
@@ -267,6 +268,7 @@ class SupersetAppInitializer:  # pylint: disable=too-many-public-methods
         appbuilder.add_api(RLSRestApi)
         appbuilder.add_api(SavedQueryRestApi)
         appbuilder.add_api(TagRestApi)
+        appbuilder.add_api(CalibrationRestApi)
         appbuilder.add_api(SqlLabRestApi)
         appbuilder.add_api(SqlLabPermalinkRestApi)
         appbuilder.add_api(LogRestApi)

@@ -30,7 +30,6 @@ import {
   snowflakeToPayload,
   fileToPayload,
   runCalibration,
-  getCognitoToken,
 } from './api';
 import { FileUploader } from './FileUploader';
 import { DatasetPicker } from './DatasetPicker';
@@ -339,11 +338,10 @@ export function CalibrationModal({ dataset, onClose }: CalibrationModalProps) {
       setSourceBName(nameB);
 
       setLoadingState('running');
-      const token = getCognitoToken();
-      const res = await runCalibration(
-        { dataset_a: payloadA, dataset_b: payloadB },
-        token,
-      );
+      const res = await runCalibration({
+        dataset_a: payloadA,
+        dataset_b: payloadB,
+      });
       setResult(res);
       setLoadingState('done');
     } catch (err) {
