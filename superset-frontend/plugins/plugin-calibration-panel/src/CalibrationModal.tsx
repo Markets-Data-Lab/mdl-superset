@@ -17,14 +17,12 @@
  * under the License.
  */
 import { useCallback, useState } from 'react';
-import { css, styled, useTheme } from '@apache-superset/core/ui';
+import { css, styled } from '@apache-superset/core/ui';
 import type {
   CalibrationResult,
-  ComparisonMode,
   LoadingState,
   ParsedFile,
   DatasetPayload,
-  ColumnStats,
 } from './types';
 import type { DatasetListItem } from './api';
 import {
@@ -66,7 +64,7 @@ const Overlay = styled.div`
   ${({ theme }) => css`
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.45);
+    background: ${theme.colorBgMask};
     z-index: 1000;
     display: flex;
     align-items: center;
