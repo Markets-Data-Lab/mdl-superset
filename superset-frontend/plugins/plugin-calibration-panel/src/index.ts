@@ -21,3 +21,5 @@ export type {
   CalibrationPanelProps,
   CalibrationPanelDock,
 } from './CalibrationPanel';
+export { CalibrationModal } from './CalibrationModal';
+export type { CalibrationModalDataset } from './CalibrationModal';
