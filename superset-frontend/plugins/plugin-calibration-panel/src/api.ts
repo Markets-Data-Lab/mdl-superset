@@ -26,15 +26,8 @@ import type {
 } from './types';
 
 // ---------------------------------------------------------------------------
-// Config
+// Config — no external URL needed; calls Superset's own /api/v1/calibration/run
 // ---------------------------------------------------------------------------
-
-function getApiUrl(): string {
-  const w = window as unknown as Record<string, string>;
-  return (
-    w.CALIBRATION_API_URL || process.env.REACT_APP_CALIBRATION_API_URL || ''
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Snowflake: fetch dataset metadata + sample rows from Superset API
@@ -117,59 +110,21 @@ export function fileToPayload(parsed: ParsedFile): DatasetPayload {
 }
 
 // ---------------------------------------------------------------------------
-// Call the AI calibration Lambda via API Gateway
+// Call the AI calibration endpoint on Superset's own backend
 // ---------------------------------------------------------------------------
 
-export async function runCalibration(
-  payload: { dataset_a: DatasetPayload; dataset_b: DatasetPayload },
-  cognitoToken: string,
-): Promise<CalibrationResult> {
-  const url = getApiUrl();
-  if (!url) {
-    throw new Error(
-      'Calibration API URL not configured. ' +
-        'Set CALIBRATION_API_URL in your Superset config or environment.',
-    );
-  }
-
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${cognitoToken}`,
-    },
-    body: JSON.stringify(payload),
+export async function runCalibration(payload: {
+  dataset_a: DatasetPayload;
+  dataset_b: DatasetPayload;
+}): Promise<CalibrationResult> {
+  const res = await SupersetClient.post({
+    endpoint: '/api/v1/calibration/run',
+    jsonPayload: payload,
   });
 
-  if (!res.ok) {
-    let message = `HTTP ${res.status}`;
-    try {
-      const err = (await res.json()) as { error?: string };
-      message = err.error ?? message;
-    } catch {
-      /* keep status */
-    }
-    throw new Error(message);
-  }
-
-  return res.json() as Promise<CalibrationResult>;
-}
-
-// ---------------------------------------------------------------------------
-// Retrieve Cognito JWT from Superset's bootstrap data
-// ---------------------------------------------------------------------------
-
-export function getCognitoToken(): string {
-  try {
-    const bootstrap = (
-      window as unknown as {
-        bootstrapData?: { user?: { access_token?: string } };
-      }
-    ).bootstrapData;
-    return bootstrap?.user?.access_token ?? '';
-  } catch {
-    return '';
-  }
+  const body = res.json as { result?: CalibrationResult; message?: string };
+  if (body.result) return body.result;
+  throw new Error(body.message ?? 'Calibration returned no results');
 }
 
 // ---------------------------------------------------------------------------
